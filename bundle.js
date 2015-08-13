@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"C:\\ksana2015\\kage-glyph-sample\\index.js":[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/Users/samsuanchen/ksana2015/kage-glyph-sample/index.js":[function(require,module,exports){
 var React=require("react");
 require("ksana2015-webruntime/livereload")(); 
 var ksanagap=require("ksana2015-webruntime/ksanagap");
@@ -6,7 +6,7 @@ ksanagap.boot("kage-glyph-sample",function(){
 	var Main=React.createElement(require("./src/main.jsx"));
 	ksana.mainComponent=React.render(Main,document.getElementById("main"));
 });
-},{"./src/main.jsx":"C:\\ksana2015\\kage-glyph-sample\\src\\main.jsx","ksana2015-webruntime/ksanagap":"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\ksanagap.js","ksana2015-webruntime/livereload":"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\livereload.js","react":"react"}],"C:\\ksana2015\\kage-glyph-sample\\node_modules\\kage\\index.js":[function(require,module,exports){
+},{"./src/main.jsx":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/main.jsx","ksana2015-webruntime/ksanagap":"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/ksanagap.js","ksana2015-webruntime/livereload":"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/livereload.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js":[function(require,module,exports){
 // Reference : http://www.cam.hi-ho.ne.jp/strong_warriors/teacher/chapter0{4,5}.html
 
 function point(x, y){
@@ -2647,7 +2647,7 @@ function cdDrawLine(kage, polygons, tx1, ty1, tx2, ty2, ta1, ta2){
   return this;
 }
 module.exports={Kage:Kage,Polygons:Polygons}
-},{}],"C:\\ksana2015\\kage-glyph-sample\\src\\kageglyph.js":[function(require,module,exports){
+},{}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/kageglyph.js":[function(require,module,exports){
 var Kage=require("kage").Kage;
 var Polygons=require("kage").Polygons;
 var React=require("react");
@@ -2677,27 +2677,32 @@ var KageGlyph=React.createClass({displayName: "KageGlyph",
 
       //viewBox="0 0 200 200" width="200" height="200"
     size=this.props.size||32;
-    svg=svg.replace('viewBox="0 0 200 200" width="200" height="200"',
-      'background-color="transparent" viewBox="0 0 200 200" width="'+size+'" height="'+size+'"');
+    svg=svg.replace('viewBox="0 0 500 500" width="500" height="500"',
+      'background-color="transparent" viewBox="0 0 500 500" width="'+size+'" height="'+size+'"');
 		return E("span",{label:this.props.glyph, dangerouslySetInnerHTML:{__html:svg}});
 	}
 });
 KageGlyph.loadBuhins=loadBuhins;
 module.exports=KageGlyph;
-},{"kage":"C:\\ksana2015\\kage-glyph-sample\\node_modules\\kage\\index.js","react":"react"}],"C:\\ksana2015\\kage-glyph-sample\\src\\main.jsx":[function(require,module,exports){
+},{"kage":"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/main.jsx":[function(require,module,exports){
 var React=require("react");
 var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
 var Polygons=require("kage").Polygons;
-var styles={candidates:{outline:0,cursor:"pointer"}};
+var styles={
+  candidates:{outline:0,cursor:"pointer"}
+  ,input:{fontSize:"200%"}
+  ,component:{fontSize:"150%"}
+};
 var E=React.createElement;
 var getutf32=require("./uniutil").getutf32;
+var ucs2string=require("./uniutil").ucs2string;
 
 var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({displayName: "maincomponent",
   getInitialState:function() {
-    return {searchresult:[],toload:"陳"}
+    return {searchresult:[],toload:"陳",components:["a","b","c","dd"]}
   }
   ,componentDidMount:function(){
     this.loadFromServer();
@@ -2706,12 +2711,16 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     var that = this;
     var data = {};
     var k;
+    var components=[];
     for (k in buhins) {
       data[k] = buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
+      var code=k.substr(1).replace(/-.*/,"");
+
+      components.push(ucs2string(parseInt("0x"+code)));
     }
     KageGlyph.loadBuhins(data);
     this.fontdataready=true;
-    this.setState({kagegkyph:this.renderGlyphs(this.state.toload)});
+    this.setState({components:components,kagegkyph:this.renderGlyphs(this.state.toload)});
     return;
   }
   ,renderGlyphs:function(toload) {
@@ -2736,9 +2745,24 @@ var maincomponent = React.createClass({displayName: "maincomponent",
       this.loadFromServer();
     }.bind(this),500)
   }
+  ,onComponentChange:function(e) {
+    console.log(e.target.dataset.idx)
+    var idx=parseInt(e.target.dataset.idx);
+    var newvalue=e.target.value;
+    var components=this.state.components;
+    components[idx]=newvalue;
+    this.setState({components:components});
+
+  }
+  ,renderItems:function(item,idx) {
+    return E("input",{key:idx,"data-idx":idx,size:2,
+      onChange:this.onComponentChange,style:styles.component,value:item});
+  }
   ,render: function() {
     return E("div",null,
-       E("input", {ref:"toload", value:this.state.toload, onChange:this.onChange})
+       E("input", {ref:"toload", value:this.state.toload, onChange:this.onChange,style:styles.input})
+       ,E("br")
+       ,this.state.components.map(this.renderItems)
        ,E("br")
       ,E("span",{ref:"candidates",
         onMouseUp:this.onselect,onTouchTap:this.onselect,
@@ -2748,7 +2772,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
   }
 });
 module.exports=maincomponent;
-},{"./kageglyph":"C:\\ksana2015\\kage-glyph-sample\\src\\kageglyph.js","./uniutil":"C:\\ksana2015\\kage-glyph-sample\\src\\uniutil.js","kage":"C:\\ksana2015\\kage-glyph-sample\\node_modules\\kage\\index.js","react":"react"}],"C:\\ksana2015\\kage-glyph-sample\\src\\uniutil.js":[function(require,module,exports){
+},{"./kageglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/kageglyph.js","./uniutil":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js","kage":"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js":[function(require,module,exports){
 
 //內碼轉字
 var ucs2string = function (unicode) { //unicode ���X�� �r���A�textension B ���p
@@ -2777,7 +2801,7 @@ var getutf32 = function (opt) { // return ucs32 value from a utf 16 string, adva
 };
 
 module.exports={getutf32:getutf32,ucs2string:ucs2string};
-},{}],"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\downloader.js":[function(require,module,exports){
+},{}],"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/downloader.js":[function(require,module,exports){
 
 var userCancel=false;
 var files=[];
@@ -2886,7 +2910,7 @@ var downloadingFile=function() {
 var downloader={startDownload:startDownload, downloadedByte:downloadedByte,
 	downloadingFile:downloadingFile, cancelDownload:cancelDownload,doneDownload:doneDownload};
 module.exports=downloader;
-},{"./mkdirp":"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\mkdirp.js","fs":false,"http":false,"path":false}],"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\html5fs.js":[function(require,module,exports){
+},{"./mkdirp":"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/mkdirp.js","fs":false,"http":false,"path":false}],"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/html5fs.js":[function(require,module,exports){
 /* emulate filesystem on html5 browser */
 var get_head=function(url,field,cb){
 	var xhr = new XMLHttpRequest();
@@ -3140,7 +3164,7 @@ var API={
 }
 module.exports=API;
 
-},{}],"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\ksanagap.js":[function(require,module,exports){
+},{}],"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/ksanagap.js":[function(require,module,exports){
 var appname="installer";
 if (typeof ksana=="undefined") {
 	window.ksana={platform:"chrome"};
@@ -3251,7 +3275,7 @@ var ksanagap={
 	boot:boot
 }
 module.exports=ksanagap;
-},{"./downloader":"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\downloader.js","fs":false,"path":false}],"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\livereload.js":[function(require,module,exports){
+},{"./downloader":"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/downloader.js","fs":false,"path":false}],"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/livereload.js":[function(require,module,exports){
 var started=false;
 var timer=null;
 var bundledate=null;
@@ -3276,7 +3300,7 @@ var livereload=function() {
 }
 
 module.exports=livereload;
-},{"./html5fs":"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\html5fs.js"}],"C:\\ksana2015\\node_modules\\ksana2015-webruntime\\mkdirp.js":[function(require,module,exports){
+},{"./html5fs":"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/html5fs.js"}],"/Users/samsuanchen/ksana2015/node_modules/ksana2015-webruntime/mkdirp.js":[function(require,module,exports){
 function mkdirP (p, mode, f, made) {
      var path = nodeRequire('path');
      var fs = nodeRequire('fs');
@@ -3362,5 +3386,5 @@ mkdirP.sync = function sync (p, mode, made) {
 
 module.exports = mkdirP.mkdirp = mkdirP.mkdirP = mkdirP;
 
-},{}]},{},["C:\\ksana2015\\kage-glyph-sample\\index.js"])
+},{}]},{},["/Users/samsuanchen/ksana2015/kage-glyph-sample/index.js"])
 //# sourceMappingURL=bundle.js.map
