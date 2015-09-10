@@ -37,4 +37,6 @@ describe("dynamic glyph generation",function(){
 		assert.deepEqual(mbf,dgg.minimumBounding(infos));
 	});
 
+//var mock="1:0:0:0:200:200$1:0:0:0:200:200:0"
+
 })
