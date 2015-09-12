@@ -1,10 +1,8 @@
 var React=require("react");
 var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
-var Polygons=require("kage").Polygons;
 var dgg=require("../dgg");
 window.dgg=dgg; // just for debugging
-var Sampleglyph=require("./sampleglyph");
 
 var styles={
   candidates:{outline:0,cursor:"pointer"}
@@ -21,7 +19,8 @@ var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({
   getInitialState:function() {
-    return {searchresult:[],toload:"口子李",components:["a","b","c","dd"]}
+    var toload="國朋棚"; // 口子李 方東陳 國朋棚
+    return {searchresult:[],toload:toload,components:["a","b","c","dd"]}
   }
   ,reformcase03:function(c,d,a,data,list){
     var p=RegExp('^'+d+'-\\d+');
@@ -59,7 +58,9 @@ var maincomponent = React.createClass({
       data[k] = b;
       list.push(k)
     }
-    var a=list.shift(), d=list.shift(), c=list.shift();
+    var a='u'+this.state.unicodes[0].toString(16);
+    var d='u'+this.state.unicodes[1].toString(16);
+    var c='u'+this.state.unicodes[2].toString(16);
     console.log('use',this.ucs(a),a,'to replace',this.ucs(d),d,'in',this.ucs(c),c,list);
   //this.reformcase01(c,d,a,data,list);
   //this.reformcase02(c,d,a,data,list);
@@ -75,8 +76,8 @@ var maincomponent = React.createClass({
     KageGlyph.loadBuhins(data);
     var components=[];
     for (var k in data) {
-      var str=this.ucs(k);
-      var j=k.indexOf('-');
+      var str=this.ucs(k); if(!str.charCodeAt(0))break;
+      var j=k.lastIndexOf('-');
       if(j>-1) str+=parseInt(k.substr(j+1));
       components.push(str);
     }
@@ -87,19 +88,28 @@ var maincomponent = React.createClass({
   }
   ,renderGlyphs:function(toload) {
     var opts={widestring:toload};
-    var ic=[],i=0,out=['用'];
-    while (ic[i]=getutf32(opts)){
-      var unicode="u"+ic[i].toString(16); i++;
-      out.push(E(KageGlyph,{glyph: unicode}));  // 畫出 ic 對應的 字
-    }
-    out.push('組成');
-    out.push(E(KageGlyph,{glyph: 'x'}));
-    out.push(E('br'));
-    out.push('(use '+ucs2string(ic[0])+' to replace '+ucs2string(ic[1])+' in '+ucs2string(ic[2])+')')
+    var unicodes=this.state.unicodes;
+    var widechars=this.state.widechars;
+    var out=[];
+    out.push('用');
+    out.push(E(KageGlyph,{glyph: "u"+unicodes[0].toString(16)}));
+    out.push('換');
+    out.push(E(KageGlyph,{glyph: "u"+unicodes[1].toString(16)}));
+    out.push('於');
+    out.push(E(KageGlyph,{glyph: "u"+unicodes[2].toString(16)}));
+    out.push('生');
+    out.push(E(KageGlyph,{glyph: 'x'})); // 組合產生的新字
     return out;
   }
   ,loadFromServer:function() {
-    var url=fontserverurl+this.state.toload;
+    var toload=this.state.toload;
+    var url=fontserverurl+toload;
+    var opts={widestring:toload};
+    var unicodes=[],widechars=[],unicode,widechar,i=0,out=['用'];
+    while (unicodes[i]=unicode=getutf32(opts)){
+      widechars[i]=widechar=ucs2string(unicode); i++;
+    }
+    this.setState({unicodes:unicodes,widechars:widechars});
     fetch(url)
       .then(function(response){
         var json=response.json();
@@ -112,7 +122,7 @@ var maincomponent = React.createClass({
     this.setState({toload:toload});
     this.timer1=setTimeout(function(){
       this.loadFromServer();
-    }.bind(this),500)
+    }.bind(this),0)
   }
   ,onComponentChange:function(e) {
     var idx=parseInt(e.target.dataset.idx);
@@ -128,7 +138,7 @@ var maincomponent = React.createClass({
       onChange:this.onComponentChange,style:styles.component,value:item});
   }
   ,render: function() {
-    return E("div", null, "在下列輸入格, 給三個中文字用以動態組成新字"
+    return E("div", null, "在下列輸入格, 給三個中文字, 可用以組成新字"
             ,E("input"
               ,{ref:"toload"
               ,value:this.state.toload

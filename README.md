@@ -24,6 +24,6 @@ maincomponent.state.components:["子","口","李","木3","子4","杏","口4"]
 產生 "李" 組成部件 ("木3","子4")
 產生 "杏" 組成部件 ("口4")
 
-
+glyphwiki.org/wiki/u674e?action=edit 參閱 李 的組字資訊
 
    mocha -w test/test.js
