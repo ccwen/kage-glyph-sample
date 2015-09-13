@@ -46,7 +46,7 @@ describe("dynamic glyph generation",function(){
 	infos["李"]="99:0:0:0:-2:200:216:u6728-03$99:0:0:0:-20:200:200:u5b50-04"
 	// dgg.getFrameSize 取部件 u5b50-04 子4 在 u674e 李 中的框
 	var partRect=[[0,-20],[200,200]];
-	it("取得 部件原始",function(){
+	it("取得 部件原始範圍",function(){
 		glyphs["李"]=dgg.decode(infos["李"]);
 		assert.deepEqual(partRect,dgg.getPartRect(glyphs["李"],"u5b50-04"));
 	});
