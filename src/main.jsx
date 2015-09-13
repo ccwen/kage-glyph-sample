@@ -20,57 +20,54 @@ var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 var maincomponent = React.createClass({
   getInitialState:function() {
     window.main=this; // just for debugging
-    var toload="國朋棚"; // 口子李 方東陳 國朋棚
-    return {searchresult:[],toload:toload,components:["a","b","c","dd"]}
+    var toload="口子李子口杏方東陳國朋棚系且組手才財火才閉人羅邏"; // 口子李 方東陳 國朋棚
+    return {searchresult:[],toload:toload}
   }
-  ,reformcase03:function(c,d,a,data,list){
-    var p=RegExp('^'+d+'-\\d+'), m;
-    for (var i=0; i<list.length; i++){
-      if(m=list[i].match(p)){
-        data['new']=dgg.replace(c,m[0],a,data); return;
-      }
-    }
+  ,reformcase03:function(c,d,a,data){
+    var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+    var m=data[c].match(p);
+    if(m) data['new']=dgg.replace(c,m[0],a,data);
   }
-  ,reformcase02:function(c,d,a,data,list){
-    var p=RegExp('^'+d+'-\\d+'), m;
-    for (var i=0; i<list.length; i++){
-      if(m=list[i].match(p)){
-        data[m[0]]=data[a]; return;
-      }
-    }
+  ,reformcase02:function(c,d,a,data){
+    var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+    var m=data[c].match(p);
+    if(m) data[m[0]]=data[a];
   }
-  ,reformcase01:function(c,d,a,data,list){
+  ,reformcase01:function(c,d,a,data){
       data[c]=data[c].replace(d,a);
   }
   ,reform:function(buhins){
-    var data = {}, list = [];
+    var data={}, newfonts=[];
     for (var k in buhins) {
-      var b= buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-      data[k] = b;
-      list.push(k)
+      data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
     }
-    var ucs=this.ucs, unicodes=this.state.unicodes, a=unicodes[0], d=unicodes[1], c=unicodes[2];
-    console.log('use',ucs(a),a,'to replace',ucs(d),d,'in',ucs(c),c);
-  //this.reformcase01(c,d,a,data,list);
-  //this.reformcase02(c,d,a,data,list);
-    this.reformcase03(c,d,a,data,list);
+    var ucs=this.ucs, unicodes=this.state.unicodes;
+    for(var i=0; i<unicodes.length; i+=3){
+      var a=unicodes[i], d=unicodes[i+1], c=unicodes[i+2];
+      var ua=ucs(a), ud=ucs(d), uc=ucs(c);
+      var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+      var m=data[c].match(p);
+      if(m){
+        var newdata=dgg.replace(c,m[0],a,data);
+        if(newdata){
+          var n=newfonts.length, newName=[ua,ud,uc].join(':');
+          data[newName]=newdata;
+          newfonts.push(newName);
+          console.log('use',ua,a,'to replace',ud,d,'in',uc,c);
+        }
+      }
+    }
+    data.newfonts=newfonts;
     return data;
   }
   ,componentDidMount:function(){
     this.loadFromServer();
   }
-  ,ucs:function(c){return ucs2string(parseInt(c.substr(1),16));}
+  ,ucs:function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
   ,load:function(buhins) {
-    var data=this.reform(buhins);
+    var data=this.reform(buhins); // 增加新字
     KageGlyph.loadBuhins(data);
-    var components=[];
-    for (var k in data) {
-      var str=this.ucs(k); if(!str.charCodeAt(0))break;
-      var j=k.lastIndexOf('-');
-      if(j>-1) str+=parseInt(k.substr(j+1));
-      components.push(str);
-    }
-    this.setState({components:components,data:data});
+    this.setState({data:data});
     this.fontdataready=true;
     this.setState({kagegkyph:this.renderGlyphs(this.state.toload)});
     return;
@@ -78,24 +75,25 @@ var maincomponent = React.createClass({
   ,renderGlyphs:function(toload) {
     var opts={widestring:toload};
     var unicodes=this.state.unicodes;
-    var widechars=this.state.widechars;
+    var newfonts=this.state.data.newfonts;
     var out=[];
-    var a=unicodes[0], d=unicodes[1], c=unicodes[2];
-    out.push('用');
-    out.push(E(KageGlyph,{glyph: a}));
-    out.push('換');
-    out.push(E(KageGlyph,{glyph: d}));
-    out.push('於');
-    out.push(E(KageGlyph,{glyph: c}));
-    out.push('生');
-    out.push(E(KageGlyph,{glyph: 'new', size: 128})); // 組合產生的新字
+    for(var i=0; i<newfonts.length; i++){
+      var newfont=newfonts[i];
+      var widechars=newfont.split(':');
+      var a=widechars[0], d=widechars[1], c=widechars[2];
+      if(this.state.data[newfont]){
+        out.push('用'+a+'換'+d+'於'+c);
+        out.push(E(KageGlyph,{glyph: newfont, size: 80})); // 組合產生的新字
+      }
+    }
     out.push(E('br'));
     out.push(E('br'));
-    out.push('相關文字或部件');
+    out.push('相關參考文字或部件');
     out.push(E('br'));
-    Object.keys(this.state.data).map(function(key){
+    Object.keys(this.state.data).forEach(function(key){
+      if(key==='newfonts')return;
       out.push(key);
-      out.push(E(KageGlyph,{glyph: key}))
+      out.push(E(KageGlyph,{glyph: key, size: 40}))
     });
     return out;
   }
@@ -103,7 +101,7 @@ var maincomponent = React.createClass({
     var toload=this.state.toload;
     var url=fontserverurl+toload;
     var opts={widestring:toload};
-    var unicodes=[],widechars=[],unicode,widechar,i=0,out=['用'];
+    var unicodes=[],widechars=[],unicode,widechar,i=0;
     while (unicode=getutf32(opts)){
       unicodes[i]='u'+unicode.toString(16);
       widechars[i]=widechar=ucs2string(unicode); i++;
@@ -118,33 +116,21 @@ var maincomponent = React.createClass({
   ,onChange:function(e) {
     clearTimeout(this.timer1);
     var toload=e.target.value;
+    if(this.state.data)
+      this.state.data['new']=undefined;
     this.setState({toload:toload});
     this.timer1=setTimeout(function(){
       this.loadFromServer();
     }.bind(this),0)
   }
-  ,onComponentChange:function(e) {
-    var idx=parseInt(e.target.dataset.idx);
-    var newvalue=e.target.value;
-    var components=this.state.components;
-    components[idx]=newvalue;
-    console.log(newvalue);
-    this.setState({components:components});
-
-  }
-  ,renderItems:function(item,idx) {
-    return E("input",{key:idx,"data-idx":idx,size:3,
-      onChange:this.onComponentChange,style:styles.component,value:item});
-  }
   ,render: function() {
     return E("div", null, "在下列輸入格, 給三個中文字, 可用以組成新字"
+            ,E("br")
             ,E("input"
               ,{ref:"toload"
               ,value:this.state.toload
               ,onChange:this.onChange
-              ,style:styles.input})
-          //,E("br")
-          //,this.state.components.map(this.renderItems)
+              ,style:styles.input,size:50})
             ,E("br")
             ,E("span"
               ,{ref:"candidates"

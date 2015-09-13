@@ -71,9 +71,9 @@ var replace=function(c,d,a,data){
 	var L=ds.split(':').map(function(n){
     	return n.match(/^-?\d+$/)?parseInt(n):n;
 	}) // [99,0,0,0,-20,200,200,"u5b50-04"] d 的 邊框資訊
-	main.dd=dd=L.pop() // "u5b50-04" d 的變形 dd
+	main.dd=d; // "u5b50-04" d 的變形 dd
 	r=[L.slice(3,5),L.slice(5,7)] // [[0,-20],[200,200]]
-	m=dgg.minimumBounding(dgg.getPoints(dgg.decode(data[dd]))) // dd 的 最小邊界 []
+	m=dgg.minimumBounding(dgg.getPoints(dgg.decode(data[d]))) // dd 的 最小邊界 []
 	rr=L.slice(0,3).join(':')+':'+dgg.adjustMbf(m,r).join(':')+':'+a;
 	return dc.replace(ds,rr); // "99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3"
 }
