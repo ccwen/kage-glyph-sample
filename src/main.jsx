@@ -19,37 +19,28 @@ var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({
   getInitialState:function() {
+    window.main=this; // just for debugging
     var toload="國朋棚"; // 口子李 方東陳 國朋棚
     return {searchresult:[],toload:toload,components:["a","b","c","dd"]}
   }
   ,reformcase03:function(c,d,a,data,list){
-    var p=RegExp('^'+d+'-\\d+');
+    var p=RegExp('^'+d+'-\\d+'), m;
     for (var i=0; i<list.length; i++){
-      var m=list[i].match(p);
-      if(m){
-        data['x']=dgg.replace(c,m[0],a,data); return;
+      if(m=list[i].match(p)){
+        data['new']=dgg.replace(c,m[0],a,data); return;
       }
     }
   }
   ,reformcase02:function(c,d,a,data,list){
-    var chinese=function(c){return ucs2string(parseInt(c.substr(1),16))}
-    console.log(d,chinese(d),a,chinese(a),c,chinese(c));
-    var p=RegExp('^'+d+'-\\d+');
+    var p=RegExp('^'+d+'-\\d+'), m;
     for (var i=0; i<list.length; i++){
-      var m=list[i].match(p);
-      if(m){
-        d=m[0];
-        console.log('data['+d+']','before',data[d]);
-        data[d]=data[a];
-        console.log('data['+d+']','after',data[d]);
-        break;
+      if(m=list[i].match(p)){
+        data[m[0]]=data[a]; return;
       }
     }
   }
   ,reformcase01:function(c,d,a,data,list){
-      console.log('before',data[c]);
       data[c]=data[c].replace(d,a);
-      console.log('after',data[c]);
   }
   ,reform:function(buhins){
     var data = {}, list = [];
@@ -58,10 +49,8 @@ var maincomponent = React.createClass({
       data[k] = b;
       list.push(k)
     }
-    var a='u'+this.state.unicodes[0].toString(16);
-    var d='u'+this.state.unicodes[1].toString(16);
-    var c='u'+this.state.unicodes[2].toString(16);
-    console.log('use',this.ucs(a),a,'to replace',this.ucs(d),d,'in',this.ucs(c),c,list);
+    var ucs=this.ucs, unicodes=this.state.unicodes, a=unicodes[0], d=unicodes[1], c=unicodes[2];
+    console.log('use',ucs(a),a,'to replace',ucs(d),d,'in',ucs(c),c);
   //this.reformcase01(c,d,a,data,list);
   //this.reformcase02(c,d,a,data,list);
     this.reformcase03(c,d,a,data,list);
@@ -81,9 +70,9 @@ var maincomponent = React.createClass({
       if(j>-1) str+=parseInt(k.substr(j+1));
       components.push(str);
     }
-    this.setState({components:components});
+    this.setState({components:components,data:data});
     this.fontdataready=true;
-    this.setState({components:components,kagegkyph:this.renderGlyphs(this.state.toload)});
+    this.setState({kagegkyph:this.renderGlyphs(this.state.toload)});
     return;
   }
   ,renderGlyphs:function(toload) {
@@ -91,14 +80,23 @@ var maincomponent = React.createClass({
     var unicodes=this.state.unicodes;
     var widechars=this.state.widechars;
     var out=[];
+    var a=unicodes[0], d=unicodes[1], c=unicodes[2];
     out.push('用');
-    out.push(E(KageGlyph,{glyph: "u"+unicodes[0].toString(16)}));
+    out.push(E(KageGlyph,{glyph: a}));
     out.push('換');
-    out.push(E(KageGlyph,{glyph: "u"+unicodes[1].toString(16)}));
+    out.push(E(KageGlyph,{glyph: d}));
     out.push('於');
-    out.push(E(KageGlyph,{glyph: "u"+unicodes[2].toString(16)}));
+    out.push(E(KageGlyph,{glyph: c}));
     out.push('生');
-    out.push(E(KageGlyph,{glyph: 'x'})); // 組合產生的新字
+    out.push(E(KageGlyph,{glyph: 'new', size: 128})); // 組合產生的新字
+    out.push(E('br'));
+    out.push(E('br'));
+    out.push('相關文字或部件');
+    out.push(E('br'));
+    Object.keys(this.state.data).map(function(key){
+      out.push(key);
+      out.push(E(KageGlyph,{glyph: key}))
+    });
     return out;
   }
   ,loadFromServer:function() {
@@ -106,7 +104,8 @@ var maincomponent = React.createClass({
     var url=fontserverurl+toload;
     var opts={widestring:toload};
     var unicodes=[],widechars=[],unicode,widechar,i=0,out=['用'];
-    while (unicodes[i]=unicode=getutf32(opts)){
+    while (unicode=getutf32(opts)){
+      unicodes[i]='u'+unicode.toString(16);
       widechars[i]=widechar=ucs2string(unicode); i++;
     }
     this.setState({unicodes:unicodes,widechars:widechars});
@@ -144,8 +143,8 @@ var maincomponent = React.createClass({
               ,value:this.state.toload
               ,onChange:this.onChange
               ,style:styles.input})
-            ,E("br")
-            ,this.state.components.map(this.renderItems)
+          //,E("br")
+          //,this.state.components.map(this.renderItems)
             ,E("br")
             ,E("span"
               ,{ref:"candidates"

@@ -26,9 +26,9 @@ var KageGlyph=React.createClass({
     var svg=polygons.generateSVG(true);
 
       //viewBox="0 0 200 200" width="200" height="200"
-    size=this.props.size||32;
-    svg=svg.replace('viewBox="0 0 500 500" width="500" height="500"',
-      'background-color="transparent" viewBox="0 0 500 500" width="'+size+'" height="'+size+'"');
+    var size=this.props.size||64;
+    svg=svg.replace('viewBox="0 0 200 200" width="200" height="200"',
+      'background-color="transparent" viewBox="0 0 200 200" width="'+size+'" height="'+size+'"');
 		return E("span",{label:this.props.glyph, dangerouslySetInnerHTML:{__html:svg}});
 	}
 });
