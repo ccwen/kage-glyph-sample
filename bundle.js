@@ -1,4 +1,92 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/Users/samsuanchen/ksana2015/kage-glyph-sample/index.js":[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/Users/samsuanchen/ksana2015/kage-glyph-sample/dgg.js":[function(require,module,exports){
+// dgg.js -- functions for dynamic glyph generation
+
+var decode=function(infos){
+	var glyphs=infos.split('$').map(function(info){
+		var values=info.split(":");
+		var t=values[0], sd=values[1], ed=values[2], x, y;
+		var points=[], xyPairs=values.slice(3);
+		xyPairs.forEach(function(v,i){ var n=v;
+			if(i%2===0) x=n;
+			else { y=n, points.push([parseInt(x),parseInt(y)]), x=undefined; }
+		});
+		var glyph={t:parseInt(t),sd:parseInt(sd),ed:parseInt(ed),p:points};
+		if(x!==undefined) {
+			glyph.partId=x;
+		//	console.log("partId",x);
+		}
+		return glyph;
+	})
+	return glyphs;
+}
+
+var getPoints=function(glyphs){ 
+	var points=[];
+	glyphs.forEach(function(glyph){
+		glyph.p.forEach(function(point){
+			points.push(point);
+		})
+	});
+	return points;
+}
+var getPartRect=function(glyphs,partId){ 
+	var frameHieght, frameWidth;
+	for(var i=0; i<glyphs.length; i++){
+		glyph=glyphs[i];
+		if(glyph.partId===partId){
+			return glyph.p;
+		}
+	}
+}
+var minimumBounding=function(points){
+	if (typeof points=="string") {
+		g=decode(points);
+		points=getPoints(g);
+	}
+	var mbf=[1000,1000,-1000,-1000];
+	points.forEach( function(p){
+		var x=p[0],y=p[1];
+		if (x<mbf[0]) mbf[0]=p[0];
+		if (y<mbf[1]) mbf[1]=p[1];
+
+		if (x>mbf[2]) mbf[2]=x;
+		if (y>mbf[3]) mbf[3]=y;
+	});
+	return mbf;
+}
+var adjustMbf=function (mbf,rect){
+	var L=mbf[0], T=mbf[1], R=mbf[2], B=mbf[3];
+	var x=rect[0][0], y=rect[0][1];
+	var W=rect[1][0]-x, H=rect[1][1]-y;
+	return [Math.round(L*W/200)+x,Math.round(T*H/200)+y,Math.round(R*W/200)+x,Math.round(B*H/200)+y]
+}
+var replace=function(c,d,a,data){
+// data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
+// c=‘u674e’, d='u5b50’, a=‘u53e3’ // 將 李 u674e 的部件 子 u5b50 換成 口 u53e3
+	var dc=data[c]; // "99:0:0:0:-2:200:216:u6728-03$99:0:0:0:-20:200:200:u5b50-04" // 取得 李 的 資訊
+	var m=dc.match(RegExp('[^"$]+:('+d+'[^"]*)')) // 李 的 資訊 中 搜尋 部件 d
+	if(!m){ // 若無 部件 d 就警示錯誤訊息
+		console.log('error 01 ---- data[c] 無部件 d 資訊'); return;
+	}
+	var ds=m[0] // "99:0:0:0:-20:200:200:u5b50-04"
+	var L=ds.split(':').map(function(n){
+    	return n.match(/^-?\d+$/)?parseInt(n):n;
+	}) // [99,0,0,0,-20,200,200,"u5b50-04"] d 的 邊框資訊
+	r=[L.slice(3,5),L.slice(5,7)] // [[0,-20],[200,200]]
+	m=minimumBounding(getPoints(decode(data[d]))) // d 的 最小邊界 []
+	rr=L.slice(0,3).join(':')+':'+adjustMbf(m,r).join(':')+':'+a;
+	return dc.replace(ds,rr); // "99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3"
+}
+
+module.exports={
+	getPoints: getPoints,
+	decode: decode,
+	minimumBounding: minimumBounding,
+	getPartRect: getPartRect,
+	adjustMbf: adjustMbf,
+	replace: replace
+}
+},{}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/index.js":[function(require,module,exports){
 var React=require("react");
 require("ksana2015-webruntime/livereload")(); 
 var ksanagap=require("ksana2015-webruntime/ksanagap");
@@ -2676,9 +2764,9 @@ var KageGlyph=React.createClass({displayName: "KageGlyph",
     var svg=polygons.generateSVG(true);
 
       //viewBox="0 0 200 200" width="200" height="200"
-    size=this.props.size||32;
-    svg=svg.replace('viewBox="0 0 500 500" width="500" height="500"',
-      'background-color="transparent" viewBox="0 0 500 500" width="'+size+'" height="'+size+'"');
+    var size=this.props.size||64;
+    svg=svg.replace('viewBox="0 0 200 200" width="200" height="200"',
+      'background-color="transparent" viewBox="0 0 200 200" width="'+size+'" height="'+size+'"');
 		return E("span",{label:this.props.glyph, dangerouslySetInnerHTML:{__html:svg}});
 	}
 });
@@ -2688,7 +2776,10 @@ module.exports=KageGlyph;
 var React=require("react");
 var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
-var Polygons=require("kage").Polygons;
+var SingleGlyph=require("./singleglyph");
+var dgg=require("../dgg");
+window.dgg=dgg; // just for debugging
+
 var styles={
   candidates:{outline:0,cursor:"pointer"}
   ,input:{fontSize:"200%"}
@@ -2697,97 +2788,101 @@ var styles={
 var E=React.createElement;
 var getutf32=require("./uniutil").getutf32;
 var ucs2string=require("./uniutil").ucs2string;
-
+var chinese=function(c){
+  return ucs2string(parseInt(c.substr(1),16))
+}
 var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({displayName: "maincomponent",
   getInitialState:function() {
-    return {searchresult:[],toload:"子口李杏",components:["a","b","c","dd"]}
+    window.main=this; // just for debugging
+    var toload="口子李子口杏方東陳國朋棚系且組手才財火才閉人羅邏"; // 口子李 方東陳 國朋棚
+    return {searchresult:[],toload:toload}
+  }
+  ,reformcase03:function(c,d,a,data){
+    var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+    var m=data[c].match(p);
+    if(m) data['new']=dgg.replace(c,m[0],a,data);
+  }
+  ,reformcase02:function(c,d,a,data){
+    var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+    var m=data[c].match(p);
+    if(m) data[m[0]]=data[a];
+  }
+  ,reformcase01:function(c,d,a,data){
+      data[c]=data[c].replace(d,a);
+  }
+  ,reform:function(buhins){
+    var data={}, newfonts=[];
+    for (var k in buhins) {
+      data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
+    }
+    var ucs=this.ucs, unicodes=this.state.unicodes;
+    for(var i=0; i<unicodes.length; i+=3){
+      var a=unicodes[i], d=unicodes[i+1], c=unicodes[i+2];
+      var ua=ucs(a), ud=ucs(d), uc=ucs(c);
+      var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+      var m=data[c].match(p);
+      if(m){
+        var newdata=dgg.replace(c,m[0],a,data);
+        if(newdata){
+          var n=newfonts.length, newName=[ua,ud,uc].join(':');
+          data[newName]=newdata;
+          newfonts.push(newName);
+          console.log('use',ua,a,'to replace',ud,d,'in',uc,c);
+        }
+      }
+    }
+    data.newfonts=newfonts;
+    return data;
   }
   ,componentDidMount:function(){
     this.loadFromServer();
   }
-  ,ucs:function(c){return ucs2string(parseInt(c.substr(1),16));}
+  ,ucs:function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
   ,load:function(buhins) {
-    var data=this.reform(buhins);
+    var data=this.reform(buhins); // 增加新字
     KageGlyph.loadBuhins(data);
-    var components=[];
-    for (var k in data) {
-      var str=this.ucs(k);
-      var j=k.indexOf('-');
-      if(j>-1) str+=parseInt(k.substr(j+1));
-      components.push(str);
-    }
-    this.setState({components:components});
+    this.setState({data:data});
     this.fontdataready=true;
-    this.setState({components:components,kagegkyph:this.renderGlyphs(this.state.toload)});
+    this.setState({kagegkyph:this.renderGlyphs(this.state.toload)});
     return;
-  }
-  ,reform:function(buhins){
-    var data = {}, list = [];
-    for (var k in buhins) {
-      var b= buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-      data[k] = b;
-      list.push(k)
-    }
-    var d=list.shift(), a=list.shift(), c=list.shift();
-    console.log('del',this.ucs(d),d,'add',this.ucs(a),a,'in',this.ucs(c),c,list);
-  //this.reformcase01(d,a,c,data,list);
-    this.reformcase02(d,a,c,data,list);
-    return data;
-  }
-  ,reformcase03:function(d,a,c,data,list){
-    var p=RegExp('^'+d+'-\\d+');
-    for (var i=0; i<list.length; i++){
-      var m=list[i].match(p);
-      if(m){
-        d=m[0];
-        console.log('data['+d+']','before',data[d]);
-        var xys=data[d].split(':').slice(3);
-        console.log(xys);
-        data[d]=data[a];
-        console.log('data['+d+']','after',data[d]);
-        break;
-      }
-    }
-  }
-  ,reformcase02:function(d,a,c,data,list){
-    var p=RegExp('^'+d+'-\\d+');
-    for (var i=0; i<list.length; i++){
-      var m=list[i].match(p);
-      if(m){
-        d=m[0];
-        console.log('data['+d+']','before',data[d]);
-        data[d]=data[a];
-        console.log('data['+d+']','after',data[d]);
-        break;
-      }
-    }
-  }
-  ,reformcase01:function(d,a,c,data,list){
-      console.log('before',data[c]);
-      data[c]=data[c].replace(d,a);
-      console.log('after',data[c]);
-  }
-  ,minimumbounding:function(xypairs){
-    var xmi=xypairs[0],ymi=xypairs[1],xma=xypairs[0],yma=xypairs[1];
-    for(var i=2;i<xypairs.length;i+=2){
-      var x=xypairs[i], y=xypairs[i+1];
-      if(xmi>x)xmi=x; if(xma<x)xma=x;
-      if(ymi>y)ymi=y; if(yma<y)yma=y;
-    }
-    return {xmi:xmi, ymi:ymi, xma:xma, yma:yma}
   }
   ,renderGlyphs:function(toload) {
     var opts={widestring:toload};
-    var ic=0,out=[];;
-    while (ic=getutf32(opts)){
-      out.push(E(KageGlyph,{glyph:"u"+ic.toString(16)}));  
+    var unicodes=this.state.unicodes;
+    var newfonts=this.state.data.newfonts;
+    var out=[];
+    for(var i=0; i<newfonts.length; i++){
+      var newfont=newfonts[i];
+      var widechars=newfont.split(':');
+      var a=widechars[0], d=widechars[1], c=widechars[2];
+      if(this.state.data[newfont]){
+        out.push('用'+a+'換'+d+'於'+c);
+        out.push(E(KageGlyph,{glyph: newfont, size: 80})); // 組合產生的新字
+      }
     }
+    out.push(E('br'));
+    out.push(E('br'));
+    out.push('相關參考文字或部件');
+    out.push(E('br'));
+    Object.keys(this.state.data).forEach(function(key){
+      if(key==='newfonts')return;
+      out.push(key);
+      out.push(E(KageGlyph,{glyph: key, size: 40}))
+    });
     return out;
   }
   ,loadFromServer:function() {
-    var url=fontserverurl+this.state.toload;
+    var toload=this.state.toload;
+    var url=fontserverurl+toload;
+    var opts={widestring:toload};
+    var unicodes=[],widechars=[],unicode,widechar,i=0;
+    while (unicode=getutf32(opts)){
+      unicodes[i]='u'+unicode.toString(16);
+      widechars[i]=widechar=ucs2string(unicode); i++;
+    }
+    this.setState({unicodes:unicodes,widechars:widechars});
     fetch(url)
       .then(function(response){
         var json=response.json();
@@ -2797,34 +2892,24 @@ var maincomponent = React.createClass({displayName: "maincomponent",
   ,onChange:function(e) {
     clearTimeout(this.timer1);
     var toload=e.target.value;
+    if(this.state.data)
+      this.state.data['new']=undefined;
     this.setState({toload:toload});
     this.timer1=setTimeout(function(){
       this.loadFromServer();
-    }.bind(this),500)
-  }
-  ,onComponentChange:function(e) {
-    var idx=parseInt(e.target.dataset.idx);
-    var newvalue=e.target.value;
-    var components=this.state.components;
-    components[idx]=newvalue;
-    console.log(newvalue);
-    this.setState({components:components});
-
-  }
-  ,renderItems:function(item,idx) {
-    return E("input",{key:idx,"data-idx":idx,size:3,
-      onChange:this.onComponentChange,style:styles.component,value:item});
+    }.bind(this),0)
   }
   ,render: function() {
-    return E("div"
-            ,null
+    if (window.location.search) {
+      return E(SingleGlyph,{expression:window.location.search.substr(1)})
+    }
+    return E("div", null, "在下列輸入格, 給三個中文字, 可用以組成新字"
+            ,E("br")
             ,E("input"
               ,{ref:"toload"
               ,value:this.state.toload
               ,onChange:this.onChange
-              ,style:styles.input})
-            ,E("br")
-            ,this.state.components.map(this.renderItems)
+              ,style:styles.input,size:50})
             ,E("br")
             ,E("span"
               ,{ref:"candidates"
@@ -2836,7 +2921,19 @@ var maincomponent = React.createClass({displayName: "maincomponent",
   }
 });
 module.exports=maincomponent;
-},{"./kageglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/kageglyph.js","./uniutil":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js","kage":"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js":[function(require,module,exports){
+},{"../dgg":"/Users/samsuanchen/ksana2015/kage-glyph-sample/dgg.js","./kageglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/kageglyph.js","./singleglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/singleglyph.js","./uniutil":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js","kage":"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/singleglyph.js":[function(require,module,exports){
+var React=require("react");
+var E=React.createElement;
+var SingleGlyph=React.createClass({displayName: "SingleGlyph",
+
+	render:function() {
+		return E("span",null,"composing"+ this.props.expression);
+	}
+
+
+})
+module.exports=SingleGlyph;
+},{"react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js":[function(require,module,exports){
 
 //內碼轉字
 var ucs2string = function (unicode) { //unicode ���X�� �r���A�textension B ���p
