@@ -21,7 +21,7 @@ var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 var maincomponent = React.createClass({
   getInitialState:function() {
     window.main=this; // just for debugging
-    var toload="口子李子口杏方東陳國朋棚系且組手才財火才閉人羅邏"; // 口子李 方東陳 國朋棚
+    var toload="婆女卡棚朋國組且系財才手閉才火邏羅人";
     return {searchresult:[],toload:toload}
   }
   ,reformcase03:function(c,d,a,data){
@@ -44,7 +44,7 @@ var maincomponent = React.createClass({
     }
     var ucs=this.ucs, unicodes=this.state.unicodes;
     for(var i=0; i<unicodes.length; i+=3){
-      var a=unicodes[i], d=unicodes[i+1], c=unicodes[i+2];
+      var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
       var ua=ucs(a), ud=ucs(d), uc=ucs(c);
       var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
       var m=data[c].match(p);
@@ -81,8 +81,8 @@ var maincomponent = React.createClass({
     for(var i=0; i<newfonts.length; i++){
       var newfont=newfonts[i];
       var widechars=newfont.split(':');
-      var a=widechars[0], d=widechars[1], c=widechars[2];
       if(this.state.data[newfont]){
+        var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
         out.push('用'+a+'換'+d+'於'+c);
         out.push(E(KageGlyph,{glyph: newfont, size: 80})); // 組合產生的新字
       }
@@ -128,7 +128,7 @@ var maincomponent = React.createClass({
     if (window.location.search) {
       return E(SingleGlyph,{expression:window.location.search.substr(1)})
     }
-    return E("div", null, "在下列輸入格, 給三個中文字, 可用以組成新字"
+    return E("div", null, "下列輸入格, 三個字 cda 一組, 將字 c 部件 d 換成 a, 用以組成ㄧ個新字:"
             ,E("br")
             ,E("input"
               ,{ref:"toload"

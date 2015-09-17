@@ -2796,7 +2796,7 @@ var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 var maincomponent = React.createClass({displayName: "maincomponent",
   getInitialState:function() {
     window.main=this; // just for debugging
-    var toload="口子李子口杏方東陳國朋棚系且組手才財火才閉人羅邏"; // 口子李 方東陳 國朋棚
+    var toload="婆女卡棚朋國組且系財才手閉才火邏羅人";
     return {searchresult:[],toload:toload}
   }
   ,reformcase03:function(c,d,a,data){
@@ -2819,7 +2819,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     }
     var ucs=this.ucs, unicodes=this.state.unicodes;
     for(var i=0; i<unicodes.length; i+=3){
-      var a=unicodes[i], d=unicodes[i+1], c=unicodes[i+2];
+      var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
       var ua=ucs(a), ud=ucs(d), uc=ucs(c);
       var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
       var m=data[c].match(p);
@@ -2856,8 +2856,8 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     for(var i=0; i<newfonts.length; i++){
       var newfont=newfonts[i];
       var widechars=newfont.split(':');
-      var a=widechars[0], d=widechars[1], c=widechars[2];
       if(this.state.data[newfont]){
+        var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
         out.push('用'+a+'換'+d+'於'+c);
         out.push(E(KageGlyph,{glyph: newfont, size: 80})); // 組合產生的新字
       }
@@ -2903,7 +2903,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     if (window.location.search) {
       return E(SingleGlyph,{expression:window.location.search.substr(1)})
     }
-    return E("div", null, "在下列輸入格, 給三個中文字, 可用以組成新字"
+    return E("div", null, "下列輸入格, 三個字 cda 一組, 將字 c 部件 d 換成 a, 用以組成ㄧ個新字:"
             ,E("br")
             ,E("input"
               ,{ref:"toload"
@@ -2922,18 +2922,102 @@ var maincomponent = React.createClass({displayName: "maincomponent",
 });
 module.exports=maincomponent;
 },{"../dgg":"/Users/samsuanchen/ksana2015/kage-glyph-sample/dgg.js","./kageglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/kageglyph.js","./singleglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/singleglyph.js","./uniutil":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js","kage":"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/singleglyph.js":[function(require,module,exports){
+// singleGlyph.js
+// http://127.0.0.1:2556/kage-glyph-sample/?s=120&q=婆女卡棚朋國組且系財才手閉才火邏羅人
+
 var React=require("react");
+var Kage=require("kage").Kage;
+var KageGlyph=require("./kageglyph");
+var getutf32=require("./uniutil").getutf32;
+var ucs2string=require("./uniutil").ucs2string;
 var E=React.createElement;
 var SingleGlyph=React.createClass({displayName: "SingleGlyph",
-
-	render:function() {
-		return E("span",null,"composing"+ this.props.expression);
+	
+	getInitialState:function() {
+	    var q=decodeURIComponent(this.props.expression);
+	    var parm={};
+	    q.split("&").forEach(function(t){
+	    	var L=t.split("=");
+	    	parm[L[0]]=L[1];
+	    });
+	    var toload=parm.q||"婆女卡棚朋國組且系財才手閉才火邏羅人", size=parseInt(parm.s||40);
+	    console.log(toload+' of size '+size);
+	    this.timer1=setTimeout(function(){
+	      this.loadFromServer();
+	    }.bind(this),0)
+	    return {searchresult:[],toload:toload,size:size,data:{newfonts:{}}}
 	}
-
-
+	,loadFromServer:function() {
+		var toload=this.state.toload;
+		var url="http://chikage.linode.caasih.net/exploded/?inputs="+toload;
+		var opts={widestring:toload};
+		var unicodes=[],widechars=[],unicode,widechar,i=0;
+		while (unicode=getutf32(opts)){
+		  unicodes[i]='u'+unicode.toString(16);
+		  widechars[i]=widechar=ucs2string(unicode); i++;
+		}
+		this.setState({unicodes:unicodes,widechars:widechars});
+		fetch(url)
+		  .then(function(response){
+		    var json=response.json();
+		    return json; })
+		  .then(this.load);
+	} 
+	,load:function(buhins) {
+		var data=this.reform(buhins); // 增加新字
+		KageGlyph.loadBuhins(data);
+		this.setState({data:data});
+		this.fontdataready=true;
+		this.setState({kagegkyph:this.renderGlyphs(this.state.toload)});
+		return;
+	}
+	,reform:function(buhins){
+		var data={}, newfonts=[];
+		for (var k in buhins) {
+		  data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
+		}
+		var ucs=this.ucs, unicodes=this.state.unicodes;
+		for(var i=0; i<unicodes.length; i+=3){
+		  var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
+		  var ua=ucs(a), ud=ucs(d), uc=ucs(c);
+		  var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
+		  var m=data[c].match(p);
+		  if(m){
+		    var newdata=dgg.replace(c,m[0],a,data);
+		    if(newdata){
+		      var n=newfonts.length, newName=[ua,ud,uc].join(':');
+		      data[newName]=newdata;
+		      newfonts.push(newName);
+		      console.log('use',ua,a,'to replace',ud,d,'in',uc,c);
+		    }
+		  }
+		}
+		data.newfonts=newfonts;
+		return data;
+	}
+	,ucs:function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
+	,renderGlyphs:function(toload) {
+		var opts={widestring:toload};
+		var unicodes=this.state.unicodes;
+		var newfonts=this.state.data.newfonts;
+		var out=[];
+		for(var i=0; i<newfonts.length; i++){
+			var newfont=newfonts[i];
+			var widechars=newfont.split(':');
+			if(this.state.data[newfont]){
+			out.push(E(KageGlyph,{glyph: newfont, size: this.state.size})); // 組合產生的新字
+			}
+		}
+		return out;
+	}
+	,render:function() {
+		var toload=this.state.toload;
+		return E("div",null,
+			this.renderGlyphs(this.state.toload));
+	}
 })
 module.exports=SingleGlyph;
-},{"react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js":[function(require,module,exports){
+},{"./kageglyph":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/kageglyph.js","./uniutil":"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js","kage":"/Users/samsuanchen/ksana2015/kage-glyph-sample/node_modules/kage/index.js","react":"react"}],"/Users/samsuanchen/ksana2015/kage-glyph-sample/src/uniutil.js":[function(require,module,exports){
 
 //內碼轉字
 var ucs2string = function (unicode) { //unicode ���X�� �r���A�textension B ���p

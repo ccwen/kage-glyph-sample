@@ -11,7 +11,11 @@ react-bundle.js is created with
 
 git clone ... /kage-glyph-sample
 
-ks server
+檢視 http://rawgit.com/ksanaforge/kage-glyph-sample/master ????
+
+or
+
+ks server 
 啟動 kage-glyph-sample local host server
 檢視 http://127.0.0.1:2556/kage-glyph-sample chrome web page 互動網頁
 (執行 kage-glyph-sample/src/main.jsx 中 render function)
