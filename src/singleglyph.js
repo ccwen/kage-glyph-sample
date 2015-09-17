@@ -1,5 +1,5 @@
 // singleGlyph.js
-// http://127.0.0.1:2556/kage-glyph-sample/?s=120&q=婆女卡棚朋國組且系財才手閉才火邏羅人
+// http://127.0.0.1:2556/kage-glyph-sample/?sz=120&q=婆女卡棚朋國組且系財才手閉才火邏羅人
 
 var React=require("react");
 var Kage=require("kage").Kage;
@@ -16,7 +16,7 @@ var SingleGlyph=React.createClass({
 	    	var L=t.split("=");
 	    	parm[L[0]]=L[1];
 	    });
-	    var toload=parm.q||"婆女卡棚朋國組且系財才手閉才火邏羅人", size=parseInt(parm.s||40);
+	    var toload=parm.q||"婆女卡棚朋國組且系財才手閉才火邏羅人", size=parseInt(parm.sz||40);
 	    console.log(toload+' of size '+size);
 	    this.timer1=setTimeout(function(){
 	      this.loadFromServer();
