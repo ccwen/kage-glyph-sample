@@ -11,7 +11,7 @@ react-bundle.js is created with
 
 git clone ... /kage-glyph-sample
 
-檢視 http://rawgit.com/ksanaforge/kage-glyph-sample/master ????
+檢視 http://rawgit.com/ksanaforge/kage-glyph-sample/master/
 
 or
 
