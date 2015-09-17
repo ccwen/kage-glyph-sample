@@ -1,6 +1,7 @@
 var React=require("react");
 var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
+var SingleGlyph=require("./singleglyph");
 var dgg=require("../dgg");
 window.dgg=dgg; // just for debugging
 
@@ -124,6 +125,9 @@ var maincomponent = React.createClass({
     }.bind(this),0)
   }
   ,render: function() {
+    if (window.location.search) {
+      return E(SingleGlyph,{expression:window.location.search.substr(1)})
+    }
     return E("div", null, "在下列輸入格, 給三個中文字, 可用以組成新字"
             ,E("br")
             ,E("input"
