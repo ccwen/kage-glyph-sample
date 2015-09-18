@@ -2,27 +2,25 @@
 // http://127.0.0.1:2556/kage-glyph-sample/?sz=120&q=婆女卡棚朋國組且系財才手閉才火邏羅人
 
 var React=require("react");
-var E=React.createElement;
 var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
-var getutf32=require("./uniutil").getutf32;
-var ucs2string=require("./uniutil").ucs2string;
+var getutf32=require("./uniutil").getutf32; // 回中文字對應的 unicode 數值
+var ucs2string=require("./uniutil").ucs2string; // 回 unicode 數值對應的中文字
 
-
-var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
-var getParmVal=function(parms,key,def){
-	var m=parms.match(RegExp('\\b'+key+'=([^&]+)')); return m?m[1]:def;
+var E=React.createElement;
+var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));} // 回 unicode 字串對應的中文字
+var getParmVal=function(key,def){ // 
+    var search=window.location.search;
+    var parms=search?decodeURIComponent(search.substr(1)):"";
+    var m=parms.match(RegExp('\\b'+key+'=([^&]+)')); return m?m[1]:def;
 }
 var SingleGlyph=React.createClass({
 	getInitialState:function() {
-	    var parms=decodeURIComponent(this.props.expression);
-	    var toload=getParmVal(parms,'q',"婆女卡");
-	    var size=parseInt(getParmVal(parms,'sz',256));
-	    //console.log(toload+' of size '+size);
-
-	    return {toload:toload,size:size,data:{newfonts:[]}}
+	    var toload=getParmVal('q',"婆女卡"); // 棚朋國組且系財才手閉才火邏羅人
+	    var size=parseInt(getParmVal('sz',256));
+	    return {toload:toload,size:size}
 	}
-	,unicodes:[]
+	,unicodes:[], data:{newfonts:[]}
 	,componentDidMount:function() {
 	     this.loadFromServer();
 	}
@@ -31,17 +29,18 @@ var SingleGlyph=React.createClass({
 		var url="http://chikage.linode.caasih.net/exploded/?inputs="+toload;
 		var opts={widestring:toload};
 		var widechars=[],unicode,i=0;
-		while (unicode=getutf32(opts)) this.unicodes[i++]='u'+unicode.toString(16);
+		while (unicode=getutf32(opts))
+			this.unicodes[i++]='u'+unicode.toString(16);
 		//this.setState({unicodes:unicodes});
 		fetch(url)
 		  .then(function(response){ return response.json(); })
 		  .then(this.load);
 	} 
 	,load:function(buhins) {
-		var data=this.reform(buhins); // 增加新字
+		var data=this.data=this.reform(buhins); // 增加新字
 		KageGlyph.loadBuhins(data);
 		this.fontdataready=true;
-		this.setState({kagegkyph:this.renderGlyphs(this.state.toload),data:data});
+		this.setState({kagegkyph:this.renderGlyphs(this.state.toload)});
 	}
 	,reform:function(buhins){
 		var data={}, newfonts=[];
@@ -67,14 +66,13 @@ var SingleGlyph=React.createClass({
 		return data;
 	}
 	,renderGlyphs:function(toload) {
-		var size=this.state.size, data=this.state.data, out=[];
+		var size=this.state.size, data=this.data, out=[];
 		data.newfonts.forEach(function(newfont,idx){
 			out.push(E(KageGlyph,{glyph: newfont, size: size, key:idx})); // 組合產生的新字
 		})
 		return out;
 	}
 	,render:function() {
-		var toload=this.state.toload;
 		return E("div", null, this.renderGlyphs(this.state.toload));
 	}
 })
