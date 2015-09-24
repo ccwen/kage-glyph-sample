@@ -3,7 +3,6 @@ var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
 var SingleGlyph=require("./singleglyph");
 var dgg=require("../dgg");
-window.dgg=dgg; // just for debugging
 
 var styles={
   candidates:{outline:0,cursor:"pointer"}
@@ -21,7 +20,11 @@ var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 var maincomponent = React.createClass({
   getInitialState:function() {
     window.main=this; // just for debugging
-    var toload="婆女卡棚朋國組且系財才手閉才火邏羅人";
+    // var toload="婆女卡棚朋國組且系財才手閉才火邏羅人";
+    // 1. 萌日目 遞迴搜尋 找到 萌 中 明 的 部件 日 換成 目
+    var toload="萌日目";
+    // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
+    // toload="𩀨從䞃致招";
     return {searchresult:[],toload:toload}
   }
   ,reformcase03:function(c,d,a,data){
@@ -61,12 +64,32 @@ var maincomponent = React.createClass({
     data.newfonts=newfonts;
     return data;
   }
+  ,reform2:function(buhins){
+    var data={}, newfonts=[];
+    for (var k in buhins) {
+      data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
+    }
+    var ucs=this.ucs, unicodes=this.state.unicodes;
+    for(var i=0; i<unicodes.length; i+=3){
+      var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
+      var ua=ucs(a), ud=ucs(d), uc=ucs(c);
+      var newdata=dgg.replace(c,d,a,data);
+        if(newdata){
+          var n=newfonts.length, newName=[ua,ud,uc].join(':');
+          data[newName]=newdata;
+          newfonts.push(newName);
+          console.log('use',ua,a,'to replace',ud,d,'in',uc,c);
+        }
+    }
+    data.newfonts=newfonts;
+    return data;
+  }
   ,componentDidMount:function(){
     this.loadFromServer();
   }
   ,ucs:function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
   ,load:function(buhins) {
-    var data=this.reform(buhins); // 增加新字
+    var data=this.reform2(buhins); // 增加新字
     KageGlyph.loadBuhins(data);
     this.setState({data:data});
     this.fontdataready=true;

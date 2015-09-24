@@ -6,6 +6,7 @@ var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
 var getutf32=require("./uniutil").getutf32; // 回中文字對應的 unicode 數值
 var ucs2string=require("./uniutil").ucs2string; // 回 unicode 數值對應的中文字
+var dgg=require("../dgg");
 
 var E=React.createElement;
 var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));} // 回 unicode 字串對應的中文字

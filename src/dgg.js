@@ -1,4 +1,5 @@
 // dgg.js -- functions for dynamic glyph generation
+var ucs2string=require("./src/uniutil").ucs2string;
 
 var decode=function(infos){
 	var glyphs=infos.split('$').map(function(info){
