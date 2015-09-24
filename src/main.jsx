@@ -128,7 +128,7 @@ var maincomponent = React.createClass({
     if (window.location.search) {
       return E(SingleGlyph,{expression:window.location.search.substr(1)})
     }
-    return E("div", null, "下列輸入格, 三個字 cda 一組, 將字 c 部件 d 換成 a, 用以組成ㄧ個新字:"
+    return E("div", null, "下列輸入格, 三個字 cda 用以組成ㄧ個新字, 將字 c 部件 d 換字 a"
             ,E("br")
             ,E("input"
               ,{ref:"toload"
