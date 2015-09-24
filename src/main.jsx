@@ -12,9 +12,6 @@ var styles={
 var E=React.createElement;
 var getutf32=require("./uniutil").getutf32;
 var ucs2string=require("./uniutil").ucs2string;
-var chinese=function(c){
-  return ucs2string(parseInt(c.substr(1),16))
-}
 var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({
