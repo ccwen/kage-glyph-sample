@@ -41,22 +41,16 @@ var SingleGlyph=React.createClass({
 			});
 	}
 	,reform:function(buhins){
-		var data={}, newfonts=[];
+		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
 		for(var i=0; i<this.unicodes.length; i+=3){
-		  var c=this.unicodes[i], d=this.unicodes[i+1], a=this.unicodes[i+2];
-		  var uc=ucs(c), ud=ucs(d), ua=ucs(a); // 三個字 cda 用以組成ㄧ個新字, 將字 c 部件 d 換字 a
-		  var p=RegExp(d+'[^$:]*'); // 用以搜尋部件 d 在 c 中的樣式 （不一定有變體, 變體代碼也不一定是數字）
-		  var m=data[c].match(p);
-		  if(m){
-		    var newdata=dgg.replace(c,m[0],a,data);
-		    if(newdata){
-		      var n=newfonts.length, name=[uc,ud,ua].join('');
-		      data[name]=newdata, newfonts.push(name);
+			var c=this.unicodes[i], d=this.unicodes[i+1], a=this.unicodes[i+2];
+			var uc=ucs(c), ud=ucs(d), ua=ucs(a); // 三個字 cda 用以組成ㄧ個新字, 將字 c 部件 d 換字 a
+			var name=dgg.replace(c,d,a,data);
+		    if(name){
+		      console.log(name);
 		    }
-		  }
 		}
-		data.newfonts=newfonts;
 		return data;
 	}
 	,renderGlyphs:function(toload) {

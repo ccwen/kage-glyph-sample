@@ -38,7 +38,7 @@ var maincomponent = React.createClass({
       data[c]=data[c].replace(d,a);
   }
   ,reform:function(buhins){
-    var data={}, newfonts=[];
+    var data={};
     for (var k in buhins) {
       data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
     }
@@ -49,36 +49,29 @@ var maincomponent = React.createClass({
       var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
       var m=data[c].match(p);
       if(m){
-        var newdata=dgg.replace(c,m[0],a,data);
-        if(newdata){
-          var n=newfonts.length, newName=[ua,ud,uc].join(':');
-          data[newName]=newdata;
-          newfonts.push(newName);
-          console.log('use',ua,a,'to replace',ud,d,'in',uc,c);
+        var newName=dgg.replace(c,m[0],a,data);
+        if(newName){
+          console.log('in',uc,c,'replace',ud,d,'by',ua,a,'as',newName);
         }
       }
     }
-    data.newfonts=newfonts;
     return data;
   }
   ,reform2:function(buhins){
     var data={}, newfonts=[];
     for (var k in buhins) {
       data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
+      data[k].key=k;
     }
     var ucs=this.ucs, unicodes=this.state.unicodes;
     for(var i=0; i<unicodes.length; i+=3){
       var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
       var ua=ucs(a), ud=ucs(d), uc=ucs(c);
-      var newdata=dgg.replace(c,d,a,data);
-        if(newdata){
-          var n=newfonts.length, newName=[ua,ud,uc].join(':');
-          data[newName]=newdata;
-          newfonts.push(newName);
-          console.log('use',ua,a,'to replace',ud,d,'in',uc,c);
-        }
+      var newName=dgg.replace(c,d,a,data);
+      if(newName){
+        console.log('in',uc,c,'replace',ud,d,'by',ua,a,'as',newName);
+      }
     }
-    data.newfonts=newfonts;
     return data;
   }
   ,componentDidMount:function(){
@@ -103,7 +96,7 @@ var maincomponent = React.createClass({
       var widechars=newfont.split(':');
       if(this.state.data[newfont]){
         var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
-        out.push('用'+a+'換'+d+'於'+c);
+        out.push(newfont);
         out.push(E(KageGlyph,{glyph: newfont, size: 80})); // 組合產生的新字
       }
     }
