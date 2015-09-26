@@ -4,7 +4,10 @@
 
 var ucs2string=require("./src/uniutil").ucs2string;
 
-var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
+var ucs=function(c){
+	if(c)
+		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):c;
+}
 
 var decode=function(infos){
 	var glyphs=infos.split('$').map(function(info){

@@ -7163,7 +7163,10 @@ function hasOwnProperty(obj, prop) {
 
 var ucs2string=require("./src/uniutil").ucs2string;
 
-var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
+var ucs=function(c){
+	if(c)
+		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):c;
+}
 
 var decode=function(infos){
 	var glyphs=infos.split('$').map(function(info){
@@ -10070,7 +10073,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     if (window.location.search) {
       return E(SingleGlyph,{expression:window.location.search.substr(1)})
     }
-    return E("div", null, "下列輸入格, 三個字 cda 用以組成ㄧ個新字, 將字 c 部件 d 換字 a"
+    return E("div", null, "先取原字 c, 連續取 da 以生新字 c, 將原字 c 部件 d 換字 a"
             ,E("br")
             ,E("input"
               ,{ref:"toload"
@@ -10146,8 +10149,10 @@ var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 	}
 	,renderGlyphs:function(toload) {
 		var size=this.state.size, out=[], newfonts=this.data.newfonts;
-		if(newfonts)
-			out.push(E(KageGlyph,{glyph: newfonts.pop(), size: size})); // 組合產生的新字
+		if(newfonts){
+			var newfont=newfonts.pop();
+			out.push(E(KageGlyph,{glyph: newfont, size: size})); // 組合產生的新字
+		}
 		return out;
 	}
 	,render:function() {

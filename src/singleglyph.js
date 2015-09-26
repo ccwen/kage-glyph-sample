@@ -55,8 +55,10 @@ var SingleGlyph=React.createClass({
 	}
 	,renderGlyphs:function(toload) {
 		var size=this.state.size, out=[], newfonts=this.data.newfonts;
-		if(newfonts)
-			out.push(E(KageGlyph,{glyph: newfonts.pop(), size: size})); // 組合產生的新字
+		if(newfonts){
+			var newfont=newfonts.pop();
+			out.push(E(KageGlyph,{glyph: newfont, size: size})); // 組合產生的新字
+		}
 		return out;
 	}
 	,render:function() {
