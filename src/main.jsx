@@ -54,7 +54,7 @@ var maincomponent = React.createClass({
     var opts={widestring:toload};
     var unicodes=this.state.unicodes;
     var newfonts=this.state.data.newfonts;
-    var out=[];
+    var out=[], data=this.state.data, ucs=this.ucs;
     for(var i=0; i<newfonts.length; i++){
       var newfont=newfonts[i];
       var widechars=newfont.split(':');
@@ -68,8 +68,16 @@ var maincomponent = React.createClass({
     out.push(E('br'));
     Object.keys(this.state.data).forEach(function(key){
       if(key==='newfonts')return;
+      var m=key.match(/^u[\da-f]+/);
+      if(m){
+        var c=m?m[0]:m, dc=data[c];
+        if(c && !dc){
+          data[c]=c;
+          out.push(c+ucs(c)+' ');
+        }
+      }
       out.push(key);
-      out.push(E(KageGlyph,{glyph: key, size: 40}))
+      out.push(E(KageGlyph,{glyph: key, size: 40}));
     });
     return out;
   }
