@@ -19,43 +19,10 @@ var maincomponent = React.createClass({
     window.main=this; // just for debugging
     // var toload="婆女卡棚朋國組且系財才手閉才火邏羅人";
     // 1. 萌日目 遞迴搜尋 找到 萌 中 明 的 部件 日 換成 目
-    var toload="萌日目";
+    // var toload="萌日目";
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
-    // toload="𩀨從䞃致招";
+    var toload="𩀨從䞃致招";
     return {searchresult:[],toload:toload}
-  }
-  ,reformcase03:function(c,d,a,data){
-    var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
-    var m=data[c].match(p);
-    if(m) data['new']=dgg.replace(c,m[0],a,data);
-  }
-  ,reformcase02:function(c,d,a,data){
-    var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
-    var m=data[c].match(p);
-    if(m) data[m[0]]=data[a];
-  }
-  ,reformcase01:function(c,d,a,data){
-      data[c]=data[c].replace(d,a);
-  }
-  ,reform:function(buhins){
-    var data={};
-    for (var k in buhins) {
-      data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-    }
-    var ucs=this.ucs, unicodes=this.state.unicodes;
-    for(var i=0; i<unicodes.length; i+=3){
-      var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
-      var ua=ucs(a), ud=ucs(d), uc=ucs(c);
-      var p=RegExp(d+'[^$:]*'); // 不一定有變體, 變體代碼也不一定是數字
-      var m=data[c].match(p);
-      if(m){
-        var newName=dgg.replace(c,m[0],a,data);
-        if(newName){
-          console.log('in',uc,c,'replace',ud,d,'by',ua,a,'as',newName);
-        }
-      }
-    }
-    return data;
   }
   ,reform2:function(buhins){
     var data={}, newfonts=[];
@@ -63,14 +30,11 @@ var maincomponent = React.createClass({
       data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
       data[k].key=k;
     }
-    var ucs=this.ucs, unicodes=this.state.unicodes;
-    for(var i=0; i<unicodes.length; i+=3){
-      var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
-      var ua=ucs(a), ud=ucs(d), uc=ucs(c);
-      var newName=dgg.replace(c,d,a,data);
-      if(newName){
-        console.log('in',uc,c,'replace',ud,d,'by',ua,a,'as',newName);
-      }
+    var unicodes=this.state.unicodes;
+    var c=unicodes.shift(), d, a;
+    while(unicodes.length>1){
+      d=unicodes.shift(), a=unicodes.shift();
+      c=dgg.replace(c,d,a,data);
     }
     return data;
   }
@@ -95,8 +59,6 @@ var maincomponent = React.createClass({
       var newfont=newfonts[i];
       var widechars=newfont.split(':');
       if(this.state.data[newfont]){
-        var c=unicodes[i], d=unicodes[i+1], a=unicodes[i+2];
-        out.push(newfont);
         out.push(E(KageGlyph,{glyph: newfont, size: 80})); // 組合產生的新字
       }
     }

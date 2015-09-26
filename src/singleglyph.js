@@ -43,22 +43,20 @@ var SingleGlyph=React.createClass({
 	,reform:function(buhins){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-		for(var i=0; i<this.unicodes.length; i+=3){
-			var c=this.unicodes[i], d=this.unicodes[i+1], a=this.unicodes[i+2];
-			var uc=ucs(c), ud=ucs(d), ua=ucs(a); // 三個字 cda 用以組成ㄧ個新字, 將字 c 部件 d 換字 a
-			var name=dgg.replace(c,d,a,data);
-		    if(name){
-		      console.log(name);
+		var unicodes=this.unicodes;
+	    if(unicodes){
+	    	var c=unicodes.shift(), d, a;
+		    while(unicodes.length>1){
+		      d=unicodes.shift(), a=unicodes.shift();
+		      c=dgg.replace(c,d,a,data);
 		    }
-		}
+	    }
 		return data;
 	}
 	,renderGlyphs:function(toload) {
 		var size=this.state.size, out=[], newfonts=this.data.newfonts;
-		if(newfonts) newfonts.forEach(function(newfont,idx){
-			out.push(newfont);
-			out.push(E(KageGlyph,{glyph: newfont, size: size, key:idx})); // 組合產生的新字
-		})
+		if(newfonts)
+			out.push(E(KageGlyph,{glyph: newfonts.pop(), size: size})); // 組合產生的新字
 		return out;
 	}
 	,render:function() {

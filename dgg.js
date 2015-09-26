@@ -65,74 +65,6 @@ var adjustMbf=function (mbf,rect){
 	var W=rect[1][0]-x, H=rect[1][1]-y;
 	return [Math.round(L*W/200)+x,Math.round(T*H/200)+y,Math.round(R*W/200)+x,Math.round(B*H/200)+y]
 }
-var replace=function(c,d,a,data){
-// data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
-// c=‘u674e’, d='u5b50’, a=‘u53e3’ // 將 李 u674e 的部件 子 u5b50 換成 口 u53e3
-	var dc=data[c]; // "99:0:0:0:-2:200:216:u6728-03$99:0:0:0:-20:200:200:u5b50-04" // 取得 李 的 資訊
-	var m=dc.match(RegExp('[^"$]+:('+d+'[^"]*)')) // 李 的 資訊 中 搜尋 部件 d
-	if(!m){ // 若無 部件 d 就警示錯誤訊息
-		console.log('error 01 ---- data[c] 無部件 d 資訊'); return;
-	}
-	var ds=m[0], dd=m[1]; // "99:0:0:0:-20:200:200:u5b50-04"
-	var L=ds.split(':').map(function(n){
-    	return n.match(/^-?\d+$/)?parseInt(n):n;
-	}) // [99,0,0,0,-20,200,200,"u5b50-04"] d 的 邊框資訊
-	r=[L.slice(3,5),L.slice(5,7)] // [[0,-20],[200,200]]
-	m=minimumBounding(getPoints(decode(data[dd]))) // d 的 最小邊界 []
-	rr=L.slice(0,3).join(':')+':'+adjustMbf(m,r).join(':')+':'+a;
-	return dc.replace(ds,rr); // "99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3"
-}
-var replace2=function(c,d,a,data){
-
-// 1. 萌日目 遞迴搜尋 找到 c 萌 中 明 的 部件 d 日 換成 a 目
-// 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
-// data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
-// c=‘u674e’, d='u5b50’, a=‘u53e3’ // 將 李 u674e 的部件 子 u5b50 換成 口 u53e3
-	var dc=data[c];
-	// data['u840c']='99:0:0:0:2:200:175:u8279-03$99:0:0:0:47:200:195:u660e'
-	// u840c 萌, u8279-03 艹3, u660e 明 
-	// data['u660e']='99:0:0:-2:-1:234:177:u65e5-01$99:0:0:-3:0:197:200:u6708-02'
-	// u660e 明, u65e5-01 日1, u6708-02 月2
-	// "99:0:0:0:-2:200:216:u6728-03$99:0:0:0:-20:200:200:u5b50-04" // 取得 李 的 資訊
-	var p=RegExp(d+'[^$:]*');
-	var mp=dc.match(p);
-	var s='99:\\d+:\\d+:([^:u]+):([^:u]+):([^:u]+):([^:u]+):([^$]+)';
-	var g=RegExp(s,'g');
-	var mg=dc.match(g);
-	if(!mp){
-		if(mg){
-			var pp=RegExp(s);
-			for(var i=0; i<mg.length; i++){
-				var ds=mg[i], m=ds.match(pp), c=m[5], dc=data[c];
-				if(mp=dc.match(p)){
-					data.newfonts=data.newfonts||{};
-
-					var m=dc.match(pp);
-					var dd=mp[0];
-					var r=[[parseInt(m[1]),parseInt(m[2])],[parseInt(m[3]),parseInt(m[4])]];
-					var mbf=minimumBounding(getPoints(decode(data[mp[0]])));
-					var adj=adjustMbf(mbf,r);
-					ds=dc.match(RegExp('[^$]+:('+d+'[^$]*)'))[0];
-					var rr=ds.match(/^\d+:\d+:\d+:/)[0]+adj.join(':')+':'+a;
-					data[c]=dc.replace(ds,rr);
-					return;
-				}
-			}
-		}
-	}
-	var m=dc.match(RegExp('[^$]+:('+d+'[^$]*)')) // 李 的 資訊 中 搜尋 部件 d
-	if(!m){ // 若無 部件 d 就警示錯誤訊息
-		console.log('error 01 ---- data[c] 無部件 d 資訊'); return;
-	}
-	var ds=m[0],dd=m[1]; // "99:0:0:0:-20:200:200:u5b50-04"
-	var L=ds.split(':').map(function(n){
-    	return n.match(/^-?\d+$/)?parseInt(n):n;
-	}) // [99,0,0,0,-20,200,200,"u5b50-04"] d 的 邊框資訊
-	r=[L.slice(3,5),L.slice(5,7)] // [[0,-20],[200,200]]
-	m=minimumBounding(getPoints(decode(data[dd]))) // d 的 最小邊界 []
-	rr=L.slice(0,3).join(':')+':'+adjustMbf(m,r).join(':')+':'+a;
-	return dc.replace(ds,rr); // "99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3"
-}
 var replace3=function(c,d,a,data){
 	var ua=ucs(a), ud=ucs(d), uc=ucs(c);
 	var out=uc+'-'+ud+'+'+ua;
@@ -155,7 +87,7 @@ var replace3=function(c,d,a,data){
 		var adj=adjustMbf(mbf,r);
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc.replace(ds,rr);
-		console.log(out);
+	//	console.log(out);
 		data.newfonts=data.newfonts||[];
 		data.newfonts.push(out);
 		return out;
@@ -168,7 +100,7 @@ var replace3=function(c,d,a,data){
 				var result=replace3(pc,mp[1],a,data);
 				if(result){
 					data[out]=dc.replace(pc,result);
-					console.log(out);
+				//	console.log(out);
 					data.newfonts.push(out);
 					return out;
 				}
