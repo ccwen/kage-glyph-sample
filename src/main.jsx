@@ -21,9 +21,11 @@ var maincomponent = React.createClass({
     // 1. 萌日目 遞迴搜尋 找到 萌 中 明 的 部件 日 換成 目
     // var toload="萌日目";
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
-    var toload="𩀨從䞃致招";
+    // var toload="𩀨從䞃致招";
+    // 3. b push e pop
+    var toload="邏羅(𩀨從䞃致招)";
     return {searchresult:[],toload:toload}
-  }
+  }, stack:[]
   ,reform2:function(buhins){
     var data={}, newfonts=[];
     for (var k in buhins) {
@@ -31,10 +33,18 @@ var maincomponent = React.createClass({
       data[k].key=k;
     }
     var unicodes=this.state.unicodes;
-    var c=unicodes.shift(), d, a;
-    while(unicodes.length>1){
-      d=unicodes.shift(), a=unicodes.shift();
-      c=dgg.replace(c,d,a,data);
+    var c=unicodes.shift(), d, a, da;
+    while(unicodes.length){
+      d=unicodes.shift();
+      if(d==='u29'){ // )
+        a=c, cd=this.stack.pop(), c=cd.c, d=cd.d; 
+      }else{
+        a=unicodes.shift();
+      }
+      if(a==='u28') // (
+        this.stack.push({c:c,d:d}), c=unicodes.shift();
+      else
+        c=dgg.replace(data,c,d,a);
     }
     return data;
   }
@@ -51,9 +61,12 @@ var maincomponent = React.createClass({
     return;
   }
   ,renderGlyphs:function(toload) {
+    var keys=Object.keys(this.state.data);
+    if(keys===[])return;
     var opts={widestring:toload};
     var unicodes=this.state.unicodes;
     var newfonts=this.state.data.newfonts;
+    if(!newfonts)return[];
     var out=[], data=this.state.data, ucs=this.ucs;
     for(var i=0; i<newfonts.length; i++){
       var newfont=newfonts[i];
@@ -91,7 +104,7 @@ var maincomponent = React.createClass({
       widechars[i]=widechar=ucs2string(unicode); i++;
     }
     this.setState({unicodes:unicodes,widechars:widechars});
-    fetch(url)
+    fetch(url.replace(/[\(\)]/g,''))
       .then(function(response){
         var json=response.json();
         return json; })

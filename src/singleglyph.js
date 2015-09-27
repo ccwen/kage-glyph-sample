@@ -32,7 +32,7 @@ var SingleGlyph=React.createClass({
 		var unicode,i=0,that=this;
 		while (unicode=getutf32(opts))
 			this.unicodes[i++]='u'+unicode.toString(16);
-		fetch(url)
+		fetch(url.replace(/[\(\)]/g,''))
 			.then(function(response){ return response.json(); })
 			.then(function(buhins) {
 				var data=that.data=that.reform(buhins); // 增加新字
@@ -43,21 +43,16 @@ var SingleGlyph=React.createClass({
 	,reform:function(buhins){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-		var unicodes=this.unicodes;
-	    if(unicodes){
-	    	var c=unicodes.shift(), d, a;
-		    while(unicodes.length>1){
-		      d=unicodes.shift(), a=unicodes.shift();
-		      c=dgg.replace(c,d,a,data);
-		    }
-	    }
+		dgg.replace(data,this.unicodes);
 		return data;
 	}
 	,renderGlyphs:function(toload) {
-		var size=this.state.size, out=[], newfonts=this.data.newfonts;
-		if(newfonts){
-			var newfont=newfonts.pop();
-			out.push(E(KageGlyph,{glyph: newfont, size: size})); // 組合產生的新字
+		var size=this.state.size, out=[], data=this.data;
+		var keys=Object.keys(data);
+		if(keys.length){
+			var lastkey=keys[keys.length-1];
+			if(!lastkey.match(/^[^a-z]/))return;
+			out.push(E(KageGlyph,{glyph: lastkey, size: size})); // 組合產生的新字
 		}
 		return out;
 	}

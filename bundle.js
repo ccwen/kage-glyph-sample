@@ -7165,7 +7165,7 @@ var ucs2string=require("./src/uniutil").ucs2string;
 
 var ucs=function(c){
 	if(c)
-		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):c;
+		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):'('+c+')';
 }
 
 var decode=function(infos){
@@ -7227,14 +7227,35 @@ var adjustMbf=function (mbf,rect){
 	var W=rect[1][0]-x, H=rect[1][1]-y;
 	return [Math.round(L*W/200)+x,Math.round(T*H/200)+y,Math.round(R*W/200)+x,Math.round(B*H/200)+y]
 }
-var replace3=function(c,d,a,data){
+var stack=[], newfonts=[];
+var replace3=function(data,c,d,a){
+	if(Array.isArray(c)){
+		var unicodes=c, da;
+		newfonts=[];
+	    c=unicodes.shift();
+	    stack=[];
+	    while(unicodes.length){
+	      d=unicodes.shift();
+	      if(d==='u29'){ // )
+	        a=c, cd=stack.pop(), c=cd.c, d=cd.d; 
+	      }else{
+	        a=unicodes.shift();
+	      }
+	      if(a==='u28') // (
+	        stack.push({c:c,d:d}), c=unicodes.shift();
+	      else
+	        c=replace3(data,c,d,a);
+	    }
+	    return c;
+	}
+	if(!Object.keys(data).length) return;
 	var ua=ucs(a), ud=ucs(d), uc=ucs(c);
 	var out=uc+'-'+ud+'+'+ua;
 // 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
 // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
 // data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
 // c=‘u674e’, d='u5b50’, a=‘u53e3’ // 將 李 u674e 的部件 子 u5b50 換成 口 u53e3
-	if(c===undefined) return;
+	if(!c) return;
 	var dc=data[c], sd='99[^$]+:('+d+'[^$:]*)', pd=RegExp(sd), md; // 直接搜尋 部件 d
 	// data['u840c']='99:0:0:0:2:200:175:u8279-03$99:0:0:0:47:200:195:u660e'
 	// u840c 萌, u8279-03 艹3, u660e 明 
@@ -7250,8 +7271,7 @@ var replace3=function(c,d,a,data){
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc.replace(ds,rr);
 	//	console.log(out);
-		data.newfonts=data.newfonts||[];
-		data.newfonts.push(out);
+		newfonts.push(out);
 		return out;
 	};
 	var sp='99[^$]+:([^$:]*)', pg=RegExp(sp,'g'), mg;
@@ -7259,11 +7279,11 @@ var replace3=function(c,d,a,data){
 		for(var i=0; i<mg.length; i++){
 			var pp=RegExp('^'+sp+'$'), pc=mg[i].match(pp)[1], mp;
 			if(mp=data[pc].match(pd)){ // c 的 組合部件 含 部件 d
-				var result=replace3(pc,mp[1],a,data);
+				var result=replace3(data,pc,mp[1],a);
 				if(result){
 					data[out]=dc.replace(pc,result);
 				//	console.log(out);
-					data.newfonts.push(out);
+					newfonts.push(out);
 					return out;
 				}
 			}
@@ -7279,6 +7299,7 @@ module.exports={
 	getPartRect: getPartRect,
 	adjustMbf: adjustMbf,
 	ucs: ucs,
+	newfonts: newfonts,
 	replace: replace3
 }
 },{"./src/uniutil":"C:\\ksana2015\\kage-glyph-sample\\src\\uniutil.js"}],"C:\\ksana2015\\kage-glyph-sample\\index.js":[function(require,module,exports){
@@ -9991,9 +10012,11 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     // 1. 萌日目 遞迴搜尋 找到 萌 中 明 的 部件 日 換成 目
     // var toload="萌日目";
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
-    var toload="𩀨從䞃致招";
+    // var toload="𩀨從䞃致招";
+    // 3. b push e pop
+    var toload="邏羅(𩀨從䞃致招)";
     return {searchresult:[],toload:toload}
-  }
+  }, stack:[]
   ,reform2:function(buhins){
     var data={}, newfonts=[];
     for (var k in buhins) {
@@ -10001,10 +10024,18 @@ var maincomponent = React.createClass({displayName: "maincomponent",
       data[k].key=k;
     }
     var unicodes=this.state.unicodes;
-    var c=unicodes.shift(), d, a;
-    while(unicodes.length>1){
-      d=unicodes.shift(), a=unicodes.shift();
-      c=dgg.replace(c,d,a,data);
+    var c=unicodes.shift(), d, a, da;
+    while(unicodes.length){
+      d=unicodes.shift();
+      if(d==='u29'){ // )
+        a=c, cd=this.stack.pop(), c=cd.c, d=cd.d; 
+      }else{
+        a=unicodes.shift();
+      }
+      if(a==='u28') // (
+        this.stack.push({c:c,d:d}), c=unicodes.shift();
+      else
+        c=dgg.replace(data,c,d,a);
     }
     return data;
   }
@@ -10021,9 +10052,12 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     return;
   }
   ,renderGlyphs:function(toload) {
+    var keys=Object.keys(this.state.data);
+    if(keys===[])return;
     var opts={widestring:toload};
     var unicodes=this.state.unicodes;
     var newfonts=this.state.data.newfonts;
+    if(!newfonts)return[];
     var out=[], data=this.state.data, ucs=this.ucs;
     for(var i=0; i<newfonts.length; i++){
       var newfont=newfonts[i];
@@ -10061,7 +10095,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
       widechars[i]=widechar=ucs2string(unicode); i++;
     }
     this.setState({unicodes:unicodes,widechars:widechars});
-    fetch(url)
+    fetch(url.replace(/[\(\)]/g,''))
       .then(function(response){
         var json=response.json();
         return json; })
@@ -10134,7 +10168,7 @@ var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 		var unicode,i=0,that=this;
 		while (unicode=getutf32(opts))
 			this.unicodes[i++]='u'+unicode.toString(16);
-		fetch(url)
+		fetch(url.replace(/[\(\)]/g,''))
 			.then(function(response){ return response.json(); })
 			.then(function(buhins) {
 				var data=that.data=that.reform(buhins); // 增加新字
@@ -10145,21 +10179,16 @@ var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 	,reform:function(buhins){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-		var unicodes=this.unicodes;
-	    if(unicodes){
-	    	var c=unicodes.shift(), d, a;
-		    while(unicodes.length>1){
-		      d=unicodes.shift(), a=unicodes.shift();
-		      c=dgg.replace(c,d,a,data);
-		    }
-	    }
+		dgg.replace(data,this.unicodes);
 		return data;
 	}
 	,renderGlyphs:function(toload) {
-		var size=this.state.size, out=[], newfonts=this.data.newfonts;
-		if(newfonts){
-			var newfont=newfonts.pop();
-			out.push(E(KageGlyph,{glyph: newfont, size: size})); // 組合產生的新字
+		var size=this.state.size, out=[], data=this.data;
+		var keys=Object.keys(data);
+		if(keys.length){
+			var lastkey=keys[keys.length-1];
+			if(!lastkey.match(/^[^a-z]/))return;
+			out.push(E(KageGlyph,{glyph: lastkey, size: size})); // 組合產生的新字
 		}
 		return out;
 	}
