@@ -7165,7 +7165,7 @@ var ucs2string=require("./src/uniutil").ucs2string;
 
 var ucs=function(c){
 	if(c)
-		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):'('+c+')';
+		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):c;
 }
 
 var decode=function(infos){
@@ -7227,30 +7227,55 @@ var adjustMbf=function (mbf,rect){
 	var W=rect[1][0]-x, H=rect[1][1]-y;
 	return [Math.round(L*W/200)+x,Math.round(T*H/200)+y,Math.round(R*W/200)+x,Math.round(B*H/200)+y]
 }
-var stack=[], newfonts=[];
-var replace3=function(data,c,d,a){
-	if(Array.isArray(c)){
-		var unicodes=c, da;
-		newfonts=[];
-	    c=unicodes.shift();
-	    stack=[];
-	    while(unicodes.length){
-	      d=unicodes.shift();
-	      if(d==='u29'){ // )
-	        a=c, cd=stack.pop(), c=cd.c, d=cd.d; 
-	      }else{
-	        a=unicodes.shift();
-	      }
-	      if(a==='u28') // (
-	        stack.push({c:c,d:d}), c=unicodes.shift();
-	      else
-	        c=replace3(data,c,d,a);
-	    }
-	    return c;
+var stack=[];
+var partsReplace=function(data,unicodes){
+	console.log('begin partsReplace(data,"'+unicodes.map(ucs).join('"+"')+'")');
+	var c=unicodes.shift(), cd, d, a;
+	while(unicodes.length){
+		d=unicodes.shift();
+		if(d==='u29'){ // ) end
+			a=c, cd=stack.pop(), c=cd.c, d=cd.d; 
+		}else{
+			a=unicodes.shift();
+			if(!a)
+				break;
+		}
+		if(a==='u28'){ // ( begin
+			stack.push({c:c,d:d});
+			c=unicodes.shift();
+		}else{
+			console.log('準備在 '+c+ucs(c)+' 換 '+d+ucs(d)+' 為 '+a+ucs(a));
+			c=partReplace(data,c,d,a);
+			console.log('在 '+c+ucs(c)+' 換 '+d+ucs(d)+' 為 '+a+ucs(a)+' 作新字 '+c);
+		}
+    }
+    return c;
+}
+var partInfoReplace=function(data,out,dc,pp,pg,pd,d,a,partInfo){
+	console.log('begin partInfoReplace(data,'+out+','+dc+','+pp+','+pg+','+pd+','+d+','+a+','+partInfo+')');
+	var part=partInfo.match(pp)[1], mp, mg;
+	if(mg=data[part].match(pg)){
+		var lst=mg.map(function(x){
+			var c=x.match(pp)[1];
+			var temp=partReplace(data,c,d,a);
+			if(temp){
+				console.log('產生新字 '+temp)
+				if(out!==temp)
+					data[out]=dc.replace(part,temp)
+				return out;
+			}
+		});
+		var result=lst.reduce(function(x,y){
+			return x||y;
+		});
+		return result;
 	}
+}
+var partReplace=function(data,c,d,a){
+	console.log('begin partReplace(data,'+c+','+d+','+a+')');
 	if(!Object.keys(data).length) return;
-	var ua=ucs(a), ud=ucs(d), uc=ucs(c);
-	var out=uc+'-'+ud+'+'+ua;
+	var ua=a.match(/^u/)?ucs(a):('('+a+')'), ud=ucs(d), uc=ucs(c);
+	var out=uc+ud+ua;
 // 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
 // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
 // data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
@@ -7270,28 +7295,19 @@ var replace3=function(data,c,d,a){
 		var adj=adjustMbf(mbf,r);
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc.replace(ds,rr);
-	//	console.log(out);
-		newfonts.push(out);
 		return out;
 	};
-	var sp='99[^$]+:([^$:]*)', pg=RegExp(sp,'g'), mg;
-	if(mg=dc.match(pg)){ // 若 c 中 含 其他組合部件, 檢視每個部件是否含 部件 d
-		for(var i=0; i<mg.length; i++){
-			var pp=RegExp('^'+sp+'$'), pc=mg[i].match(pp)[1], mp;
-			if(mp=data[pc].match(pd)){ // c 的 組合部件 含 部件 d
-				var result=replace3(data,pc,mp[1],a);
-				if(result){
-					data[out]=dc.replace(pc,result);
-				//	console.log(out);
-					newfonts.push(out);
-					return out;
-				}
-			}
-		}
+	var sp='99[^$]+:([^$:]*)', pp=RegExp('^'+sp+'$'), pg=RegExp('(^|$)'+sp,'g'), mg;
+	if(mg=dc.match(pg)){ // 若 c 中 含 其他組合部件, 檢視每個組合部件內是否含 部件 d
+		var result=mg.map(function(x){
+			return	partInfoReplace(data,out,dc,pp,pg,pd,d,a,x);
+		});
+		result=result.reduce(function(x,y){
+			return	x||y;
+		});
+		return result;
 	}
 }
-
-
 module.exports={
 	getPoints: getPoints,
 	decode: decode,
@@ -7299,8 +7315,8 @@ module.exports={
 	getPartRect: getPartRect,
 	adjustMbf: adjustMbf,
 	ucs: ucs,
-	newfonts: newfonts,
-	replace: replace3
+	partsReplace: partsReplace,
+	partReplace: partReplace
 }
 },{"./src/uniutil":"C:\\ksana2015\\kage-glyph-sample\\src\\uniutil.js"}],"C:\\ksana2015\\kage-glyph-sample\\index.js":[function(require,module,exports){
 var React=require("react");
@@ -10014,7 +10030,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
     // var toload="𩀨從䞃致招";
     // 3. b push e pop
-    var toload="邏羅(𩀨從䞃致招)";
+    var toload="邏羅(寶貝(𩀨從䞃致招))";
     return {searchresult:[],toload:toload}
   }, stack:[]
   ,reform2:function(buhins){
@@ -10035,7 +10051,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
       if(a==='u28') // (
         this.stack.push({c:c,d:d}), c=unicodes.shift();
       else
-        c=dgg.replace(data,c,d,a);
+        c=dgg.partReplace(data,c,d,a);
     }
     return data;
   }
@@ -10135,7 +10151,7 @@ var maincomponent = React.createClass({displayName: "maincomponent",
 module.exports=maincomponent;
 },{"../dgg":"C:\\ksana2015\\kage-glyph-sample\\dgg.js","./kageglyph":"C:\\ksana2015\\kage-glyph-sample\\src\\kageglyph.js","./singleglyph":"C:\\ksana2015\\kage-glyph-sample\\src\\singleglyph.js","./uniutil":"C:\\ksana2015\\kage-glyph-sample\\src\\uniutil.js","kage":"C:\\ksana2015\\kage-glyph-sample\\node_modules\\kage\\index.js","react":"react"}],"C:\\ksana2015\\kage-glyph-sample\\src\\singleglyph.js":[function(require,module,exports){
 // singleGlyph.js
-// http://127.0.0.1:2556/kage-glyph-sample/?sz=256&q=婆女卡棚朋國組且系財才手閉才火邏羅人
+// http://127.0.0.1:2556/kage-glyph-sample/?q=邏羅(寶貝(𩀨從䞃致招))&sz=512
 
 var React=require("react");
 var Kage=require("kage").Kage;
@@ -10146,15 +10162,20 @@ var dgg=require("../dgg");
 
 var E=React.createElement;
 var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));} // 回 unicode 字串對應的中文字
-var getParmVal=function(key,def){ // get url parameter value by key
+var getParamVal=function(key,def){ // get url parameter value by key
     var search=window.location.search;
     var parms=search?decodeURIComponent(search.substr(1)):"";
     var m=parms.match(RegExp('\\b'+key+'=([^&]+)')); return m?m[1]:def;
 }
+var checkParam=function(key){ // get url parameter value by key
+    var search=window.location.search;
+    var parms=search?decodeURIComponent(search.substr(1)):"";
+    var m=parms.match(RegExp('\\b'+key+'\\b')); return m;
+}
 var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 	getInitialState:function() {
-	    var toload=getParmVal('q',"婆女卡"); // 棚朋國組且系財才手閉才火邏羅人
-	    var size=parseInt(getParmVal('sz',256));
+	    var toload=getParamVal('q',"婆女卡"); // 棚朋國組且系財才手閉才火邏羅人
+	    var size=parseInt(getParamVal('sz',256));
 	    return {toload:toload,size:size}
 	}
 	,unicodes:[], data:{}
@@ -10169,7 +10190,9 @@ var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 		while (unicode=getutf32(opts))
 			this.unicodes[i++]='u'+unicode.toString(16);
 		fetch(url.replace(/[\(\)]/g,''))
-			.then(function(response){ return response.json(); })
+			.then(function(response){
+				return response.json(); 
+			})
 			.then(function(buhins) {
 				var data=that.data=that.reform(buhins); // 增加新字
 				KageGlyph.loadBuhins(data);
@@ -10179,21 +10202,36 @@ var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 	,reform:function(buhins){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-		dgg.replace(data,this.unicodes);
+		this.thefont=dgg.partsReplace(data,this.unicodes);
 		return data;
 	}
 	,renderGlyphs:function(toload) {
 		var size=this.state.size, out=[], data=this.data;
-		var keys=Object.keys(data);
+		var keys=Object.keys(data), ucs=dgg.ucs, thefont=this.thefont;
 		if(keys.length){
-			var lastkey=keys[keys.length-1];
-			if(!lastkey.match(/^[^a-z]/))return;
-			out.push(E(KageGlyph,{glyph: lastkey, size: size})); // 組合產生的新字
+			if(thefont){
+				out.push(E(KageGlyph,{glyph: thefont, size: size})); // 組合產生的新字
+				out.push(E('br'));
+			}
+			if(checkParam('chk')) keys.forEach(function(key){
+				var m=key.match(/^u[\da-f]+/);
+				if(m){
+					var c=m?m[0]:m, dc=data[c];
+					if(c && !dc){
+					  out.push(c+ucs(c)+' ');
+					}
+				}
+				out.push(key);
+				out.push(E(KageGlyph,{glyph: key, size: 40}));
+			})
 		}
 		return out;
 	}
 	,render:function() {
-		return E("div", null, this.renderGlyphs(this.state.toload));
+		var out='nothing yet';
+		if(this.state.fontdataready)
+			out=this.renderGlyphs(this.state.toload);
+		return E("div", null, out);
 	}
 })
 module.exports=SingleGlyph;

@@ -6,7 +6,7 @@ var ucs2string=require("./src/uniutil").ucs2string;
 
 var ucs=function(c){
 	if(c)
-		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):'('+c+')';
+		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):c;
 }
 
 var decode=function(infos){
@@ -68,30 +68,55 @@ var adjustMbf=function (mbf,rect){
 	var W=rect[1][0]-x, H=rect[1][1]-y;
 	return [Math.round(L*W/200)+x,Math.round(T*H/200)+y,Math.round(R*W/200)+x,Math.round(B*H/200)+y]
 }
-var stack=[], newfonts=[];
-var replace3=function(data,c,d,a){
-	if(Array.isArray(c)){
-		var unicodes=c, da;
-		newfonts=[];
-	    c=unicodes.shift();
-	    stack=[];
-	    while(unicodes.length){
-	      d=unicodes.shift();
-	      if(d==='u29'){ // )
-	        a=c, cd=stack.pop(), c=cd.c, d=cd.d; 
-	      }else{
-	        a=unicodes.shift();
-	      }
-	      if(a==='u28') // (
-	        stack.push({c:c,d:d}), c=unicodes.shift();
-	      else
-	        c=replace3(data,c,d,a);
-	    }
-	    return c;
+var stack=[];
+var partsReplace=function(data,unicodes){
+	console.log('begin partsReplace(data,"'+unicodes.map(ucs).join('"+"')+'")');
+	var c=unicodes.shift(), cd, d, a;
+	while(unicodes.length){
+		d=unicodes.shift();
+		if(d==='u29'){ // ) end
+			a=c, cd=stack.pop(), c=cd.c, d=cd.d; 
+		}else{
+			a=unicodes.shift();
+			if(!a)
+				break;
+		}
+		if(a==='u28'){ // ( begin
+			stack.push({c:c,d:d});
+			c=unicodes.shift();
+		}else{
+			console.log('準備在 '+c+ucs(c)+' 換 '+d+ucs(d)+' 為 '+a+ucs(a));
+			c=partReplace(data,c,d,a);
+			console.log('在 '+c+ucs(c)+' 換 '+d+ucs(d)+' 為 '+a+ucs(a)+' 作新字 '+c);
+		}
+    }
+    return c;
+}
+var partInfoReplace=function(data,out,dc,pp,pg,pd,d,a,partInfo){
+	console.log('begin partInfoReplace(data,'+out+','+dc+','+pp+','+pg+','+pd+','+d+','+a+','+partInfo+')');
+	var part=partInfo.match(pp)[1], mp, mg;
+	if(mg=data[part].match(pg)){
+		var lst=mg.map(function(x){
+			var c=x.match(pp)[1];
+			var temp=partReplace(data,c,d,a);
+			if(temp){
+				console.log('產生新字 '+temp)
+				if(out!==temp)
+					data[out]=dc.replace(part,temp)
+				return out;
+			}
+		});
+		var result=lst.reduce(function(x,y){
+			return x||y;
+		});
+		return result;
 	}
+}
+var partReplace=function(data,c,d,a){
+	console.log('begin partReplace(data,'+c+','+d+','+a+')');
 	if(!Object.keys(data).length) return;
-	var ua=ucs(a), ud=ucs(d), uc=ucs(c);
-	var out=uc+'-'+ud+'+'+ua;
+	var ua=a.match(/^u/)?ucs(a):('('+a+')'), ud=ucs(d), uc=ucs(c);
+	var out=uc+ud+ua;
 // 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
 // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
 // data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
@@ -111,28 +136,19 @@ var replace3=function(data,c,d,a){
 		var adj=adjustMbf(mbf,r);
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc.replace(ds,rr);
-	//	console.log(out);
-		newfonts.push(out);
 		return out;
 	};
-	var sp='99[^$]+:([^$:]*)', pg=RegExp(sp,'g'), mg;
-	if(mg=dc.match(pg)){ // 若 c 中 含 其他組合部件, 檢視每個部件是否含 部件 d
-		for(var i=0; i<mg.length; i++){
-			var pp=RegExp('^'+sp+'$'), pc=mg[i].match(pp)[1], mp;
-			if(mp=data[pc].match(pd)){ // c 的 組合部件 含 部件 d
-				var result=replace3(data,pc,mp[1],a);
-				if(result){
-					data[out]=dc.replace(pc,result);
-				//	console.log(out);
-					newfonts.push(out);
-					return out;
-				}
-			}
-		}
+	var sp='99[^$]+:([^$:]*)', pp=RegExp('^'+sp+'$'), pg=RegExp('(^|$)'+sp,'g'), mg;
+	if(mg=dc.match(pg)){ // 若 c 中 含 其他組合部件, 檢視每個組合部件內是否含 部件 d
+		var result=mg.map(function(x){
+			return	partInfoReplace(data,out,dc,pp,pg,pd,d,a,x);
+		});
+		result=result.reduce(function(x,y){
+			return	x||y;
+		});
+		return result;
 	}
 }
-
-
 module.exports={
 	getPoints: getPoints,
 	decode: decode,
@@ -140,6 +156,6 @@ module.exports={
 	getPartRect: getPartRect,
 	adjustMbf: adjustMbf,
 	ucs: ucs,
-	newfonts: newfonts,
-	replace: replace3
+	partsReplace: partsReplace,
+	partReplace: partReplace
 }

@@ -23,7 +23,7 @@ var maincomponent = React.createClass({
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
     // var toload="𩀨從䞃致招";
     // 3. b push e pop
-    var toload="邏羅(𩀨從䞃致招)";
+    var toload="邏羅(寶貝(𩀨從䞃致招))";
     return {searchresult:[],toload:toload}
   }, stack:[]
   ,reform2:function(buhins){
@@ -44,7 +44,7 @@ var maincomponent = React.createClass({
       if(a==='u28') // (
         this.stack.push({c:c,d:d}), c=unicodes.shift();
       else
-        c=dgg.replace(data,c,d,a);
+        c=dgg.partReplace(data,c,d,a);
     }
     return data;
   }
