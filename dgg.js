@@ -43,7 +43,7 @@ var getPartRect=function(glyphs,partId){
 		glyph=glyphs[i];
 		if(glyph.partId===partId){
 			return glyph.p;
-		}
+		}n
 	}
 }
 var minimumBounding=function(points){
@@ -62,42 +62,30 @@ var minimumBounding=function(points){
 	});
 	return mbf;
 }
-var adjustMbf=function (mbf,rect){
-	var L=mbf[0], T=mbf[1], R=mbf[2], B=mbf[3];
-	var x=rect[0][0], y=rect[0][1];
-	var W=rect[1][0]-x, H=rect[1][1]-y;
-	return [Math.round(L*W/200)+x,Math.round(T*H/200)+y,Math.round(R*W/200)+x,Math.round(B*H/200)+y]
+var adjustMbf=function (dMbf,aMbf,rect){
+	var Ld=dMbf[0], Td=dMbf[1], Rd=dMbf[2], Bd=dMbf[3], Wd=Rd-Ld, Hd=Bd-Td;
+	var La=aMbf[0], Ta=aMbf[1], Ra=aMbf[2], Ba=aMbf[3], Wa=Ra-La, Ha=Ba-Ta;
+	var Lf=rect[0][0], Tf=rect[0][1], Rf=rect[1][0], Bf=rect[1][1], Wf=Rf-Lf, Hf=Bf-Tf;
+	var Cx=Lf+(Ld+Rd)/2*Wf/200, Cy=Tf+(Td+Bd)/2*Hf/200;
+	var Dx=Wf*Wd/Wa/2, Dy=Hf*Hd/Ha/2;
+	var L=Cx-Dx, T=Cy-Dy, R=Cx+Dx, B=Cy+Dy;
+	var result=[L,T,R,B];
+	return result;
 }
 var stack=[];
 var partsReplace=function(data,unicodes){
-//	console.log('begin partsReplace(data,"'+unicodes.map(ucs).join('"+"')+'")');
-	var c=unicodes.shift(), cd, d, a;
-	while(unicodes.length){
+	var c=unicodes.shift(), d, a;
+	if(unicodes.length>1){
 		d=unicodes.shift();
-		if(d==='u29'){ // ) end
-			a=c, cd=stack.pop(), c=cd.c, d=cd.d; 
-		}else{
-			a=unicodes.shift();
-			if(!a)
-				break;
-		}
-		if(a==='u28'){ // ( begin
-			stack.push({c:c,d:d});
-			c=unicodes.shift();
-		}else{
-//			console.log('準備在 '+c+ucs(c)+' 換 '+d+ucs(d)+' 為 '+a+ucs(a));
-			c=partReplace(data,c,d,a);
-//			console.log('在 '+c+ucs(c)+' 換 '+d+ucs(d)+' 為 '+a+ucs(a)+' 作新字 '+c);
-		}
-    }
+		a=unicodes.length>2?partsReplace(data,unicodes):unicodes.shift();
+		c=partReplace(data,c,d,a);
+	}
     return c;
 }
 var partReplace=function(data,c,d,a){
+//	c='c',d='d',a='a';
 	if(!Object.keys(data).length) return;
-	var ua=a.match(/^u/)?ucs(a):('('+a+')'), ud=ucs(d), uc=ucs(c);
-	var out=uc+ud+ua, cuc=(c===uc?'':c)+uc;
-//	console.log('begin partReplace(data,'+cuc+','+d+ud+','+a+ua+') for '+out);
-	
+	var ua=a.match(/^u/)?ucs(a):('('+a+')'), ud=ucs(d), uc=ucs(c), out=uc+ud+ua;
 // 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
 // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
 // data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
@@ -113,25 +101,22 @@ var partReplace=function(data,c,d,a){
 		var ds=md[0], dd=md[1]; // ds 為待替換的資訊 準備改以 rr 資訊 將 dd 換為 a 並修正 範圍
 		var m=ds.match(/^(\d+:\d+:\d+:)([-\d]+):([-\d]+):([-\d]+):([-\d]+)/);
 		var r=[[parseInt(m[2]),parseInt(m[3])],[parseInt(m[4]),parseInt(m[5])]];
-		var mbf=minimumBounding(getPoints(decode(data[dd])));
-		var adj=adjustMbf(mbf,r);
+		var dMbf=minimumBounding(getPoints(decode(data[dd])));
+		var aMbf=minimumBounding(getPoints(decode(data[a])));
+		var adj=adjustMbf(dMbf,aMbf,r);
 		var rr=m[1]+adj.join(':')+':'+a;
-		data[out]=dc.replace(ds,rr);
+		data[out]=dc=dc.replace(ds,rr);
 		return out;
 	};
 	var sp='99[^$]+:([^$:]*)', pp=RegExp('^\\$?'+sp+'$'), pg=RegExp('(^|\\$)'+sp,'g'), mg;
 	if(mg=dc.match(pg)){ // 若 c 中 含 其他組合部件, 檢視每個組合部件內是否含 部件 d
-		var result=mg.map(function(x){
+		return mg.map(function(x){
 			var mp=x.match(pp), part=mp[1], temp=partReplace(data,part,d,a);
 			if(temp){
-				data[out]=dc.replace(part,temp);
+				data[out]=dc=dc.replace(part,temp);
 				return out;
 			}
-		});
-		result=result.reduce(function(x,y){
-			return	x||y;
-		});
-		return result;
+		}).reduce(function(x,y){return x||y;});
 	}
 }
 module.exports={

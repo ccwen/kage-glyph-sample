@@ -1,6 +1,6 @@
 jsonp_handler({
  "version": "1",
- "build": 530,
+ "build": 602,
  "title": "kage-glyph-sample",
  "minruntime": 1,
  "baseurl": "http://rawgit.com/ksanaforge/kage-glyph-sample/master/",
@@ -8,7 +8,9 @@ jsonp_handler({
  "browserify": {
   "external": [
    "react",
-   "react/addons",
+   "react-dom",
+   "react-addons-update",
+   "react-addons-pure-render-mixin",
    "bootstrap",
    "ksana-jsonrom",
    "ksana-analyzer",
@@ -26,20 +28,20 @@ jsonp_handler({
   "ksana.js"
  ],
  "filesizes": [
-  492,
+  442,
   84,
-  706031,
-  124034,
-  348005,
-  801
+  671592,
+  136638,
+  8549766,
+  862
  ],
  "filedates": [
+  "2015-10-15T10:27:35.088Z",
   "2015-09-26T14:20:45.107Z",
-  "2015-09-26T14:20:45.107Z",
-  "2015-09-26T14:20:45.139Z",
-  "2015-09-26T14:20:45.107Z",
-  "2015-10-01T05:52:31.091Z",
-  "2015-10-01T05:50:53.836Z"
+  "2015-10-15T10:26:00.967Z",
+  "2015-10-15T10:25:56.627Z",
+  "2015-10-22T08:46:42.496Z",
+  "2015-10-22T08:44:40.073Z"
  ],
- "date": "2015-10-01T05:52:32.091Z"
+ "date": "2015-10-22T08:46:43.188Z"
 })

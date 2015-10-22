@@ -1,1 +1,1 @@
-browserify -r react -r react/addons -u react-native> react-bundle.js
+browserify -r react -r react-dom -r react-addons-update -r react-addons-pure-render-mixin> react-bundle.js

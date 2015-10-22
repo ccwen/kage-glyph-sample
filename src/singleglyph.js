@@ -1,5 +1,5 @@
 // singleGlyph.js
-// http://127.0.0.1:2556/kage-glyph-sample/?q=邏羅(寶貝(𩀨從䞃致招))&sz=512
+// http://127.0.0.1:2556/kage-glyph-sample/?q=邏羅寶貝𩀨從䞃致招&sz=512&chk
 
 var React=require("react");
 var Kage=require("kage").Kage;
@@ -50,6 +50,10 @@ var SingleGlyph=React.createClass({
 	,reform:function(buhins){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
+		data['c']="99:0:0:-10:-10:140:140:d$99:0:0:60:60:240:240:b";
+		data['b']="1:0:0:50:100:100:50$1:0:0:100:50:150:100$1:0:0:150:100:100:150$1:0:0:100:150:50:100";
+		data['d']="1:0:0:50:50:150:50$1:0:0:150:50:150:150$1:0:0:150:150:50:150$1:0:0:50:150:50:50";
+		data['a']="1:0:0:50:50:150:150$1:0:0:50:150:150:50";
 		this.thefont=dgg.partsReplace(data,this.unicodes);
 		return data;
 	}
@@ -58,10 +62,14 @@ var SingleGlyph=React.createClass({
 		var keys=Object.keys(data), ucs=dgg.ucs, thefont=this.thefont;
 		if(keys.length){
 			if(thefont){
-				out.push(E(KageGlyph,{glyph: thefont, size: size})); // 組合產生的新字
-				out.push(E('br'));
+			//	out.push(E(KageGlyph,{glyph: 'a', size: size})); // 組合產生的新字
+			//	out.push(E(KageGlyph,{glyph: 'b', size: size})); // 組合產生的新字
+			//	out.push(E(KageGlyph,{glyph: 'c', size: size})); // 組合產生的新字
+			//	out.push(E(KageGlyph,{glyph: 'd', size: size})); // 組合產生的新字
+				out.push(E(KageGlyph,{glyph: thefont, key: 'a1', size: size})); // 組合產生的新字
+				out.push(E('br',{key:'a2'}));
 			}
-			if(checkParam('chk')) keys.forEach(function(key){
+			if(checkParam('chk')) keys.forEach(function(key,i){
 				var m=key.match(/^u[\da-f]+/);
 				if(m){
 					var c=m?m[0]:m, dc=data[c];
@@ -69,8 +77,8 @@ var SingleGlyph=React.createClass({
 					  out.push(c+ucs(c)+' ');
 					}
 				}
-				out.push(key);
-				out.push(E(KageGlyph,{glyph: key, size: 40}));
+				out.push(E("span",{key:'a'+(i+1)},key+ucs(key)));
+				out.push(E(KageGlyph,{glyph: key, key:i+1, size: 40}));
 			})
 		}
 		return out;

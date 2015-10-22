@@ -3,16 +3,32 @@ var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
 var SingleGlyph=require("./singleglyph");
 var dgg=require("../dgg");
-
+      console.time('load glyph data');
+var glyph=require("../glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
+var glyphs=require("../glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
+      console.timeEnd('load glyph data');
 var styles={
   candidates:{outline:0,cursor:"pointer"}
   ,input:{fontSize:"200%"}
   ,component:{fontSize:"150%"}
 };
 var E=React.createElement;
-var getutf32=require("./uniutil").getutf32;
-var ucs2string=require("./uniutil").ucs2string;
-var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
+var uniutil=require("./uniutil");
+var getutf32=uniutil.getutf32;
+var ucs2string=uniutil.ucs2string;
+var pp=/99[:\d]+([a-z][a-z0-9-]*)/;
+var pg=/99[:\d]+([a-z][a-z0-9-]*)/g;
+var getAllGlyphs=function(data,u){
+    if(data[u])return;
+    var d=glyphs[glyph[u]];
+    data[u]=d;
+    var uu=d.match(pg); // 所有部件組字資訊
+    for(var i=0; i<uu.length; i++){
+      var u=uu[i].match(pp)[1]; // 每個部件名
+      getAllGlyphs(data,u);
+    }
+}
+// var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({
   getInitialState:function() {
@@ -23,7 +39,7 @@ var maincomponent = React.createClass({
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
     // var toload="𩀨從䞃致招";
     // 3. b push e pop
-    var toload="邏羅(寶貝(𩀨從䞃致招))";
+    var toload=""; // 邏羅(寶貝(𩀨從䞃致招))";
     return {searchresult:[],toload:toload}
   }, stack:[]
   ,reform2:function(buhins){
@@ -33,23 +49,20 @@ var maincomponent = React.createClass({
       data[k].key=k;
     }
     var unicodes=this.state.unicodes;
-    var c=unicodes.shift(), d, a, da;
-    while(unicodes.length){
-      d=unicodes.shift();
-      if(d==='u29'){ // )
-        a=c, cd=this.stack.pop(), c=cd.c, d=cd.d; 
-      }else{
+    if(unicodes){
+      var c=unicodes.shift(), d, a;
+      while(unicodes.length){
+        d=unicodes.shift();
         a=unicodes.shift();
+        if(a)
+          c=dgg.partReplace(data,c,d,a);
       }
-      if(a==='u28') // (
-        this.stack.push({c:c,d:d}), c=unicodes.shift();
-      else
-        c=dgg.partReplace(data,c,d,a);
     }
     return data;
   }
   ,componentDidMount:function(){
-    this.loadFromServer();
+    //this.loadFromServer();
+      this.loadFromJSON();
   }
   ,ucs:function(c){if(c)return ucs2string(parseInt(c.substr(1),16));}
   ,load:function(buhins) {
@@ -61,6 +74,7 @@ var maincomponent = React.createClass({
     return;
   }
   ,renderGlyphs:function(toload) {
+    if(!this.state.data)return;
     var keys=Object.keys(this.state.data);
     if(keys===[])return;
     var opts={widestring:toload};
@@ -94,6 +108,20 @@ var maincomponent = React.createClass({
     });
     return out;
   }
+  ,loadFromJSON:function() {
+    var toload=this.state.toload;
+    var opts={widestring:toload};
+    var unicodes=[],widechars=[],unicode,widechar,i=0;
+    var data={}, u;
+    while (unicode=getutf32(opts)){
+      unicodes[i]=u='u'+unicode.toString(16);
+      getAllGlyphs(data,u);
+      data[u]=glyphs[glyph[u]];
+      widechars[i]=widechar=ucs2string(unicode); i++;
+    }
+    this.load(data);
+    this.setState({unicodes:unicodes,widechars:widechars});
+  }
   ,loadFromServer:function() {
     var toload=this.state.toload;
     var url=fontserverurl+toload;
@@ -117,7 +145,8 @@ var maincomponent = React.createClass({
       this.state.data['new']=undefined;
     this.setState({toload:toload});
     this.timer1=setTimeout(function(){
-      this.loadFromServer();
+    //this.loadFromServer();
+      this.loadFromJSON();
     }.bind(this),0)
   }
   ,render: function() {
