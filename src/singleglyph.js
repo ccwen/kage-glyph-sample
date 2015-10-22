@@ -7,6 +7,10 @@ var KageGlyph=require("./kageglyph");
 var getutf32=require("./uniutil").getutf32; // 回中文字對應的 unicode 數值
 var ucs2string=require("./uniutil").ucs2string; // 回 unicode 數值對應的中文字
 var dgg=require("../dgg");
+      console.time('singleglyph load glyph data');
+var glyph=require("../glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
+var glyphs=require("../glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
+      console.timeEnd('singleglyph load glyph data');
 
 var E=React.createElement;
 var ucs=function(c){if(c)return ucs2string(parseInt(c.substr(1),16));} // 回 unicode 字串對應的中文字
@@ -28,7 +32,22 @@ var SingleGlyph=React.createClass({
 	}
 	,unicodes:[], data:{}
 	,componentDidMount:function() {
-	     this.loadFromServer();
+	     this.loadFromJSON();
+	}
+	,loadFromJSON:function() {
+		var toload=this.state.toload;
+		var opts={widestring:toload};
+		var unicodes=[],widechars=[],unicode,widechar,i=0;
+		var data={}, u;
+		while (unicode=getutf32(opts)){
+		  unicodes[i]=u='u'+unicode.toString(16);
+		  dgg.getAllGlyphs(data,u);
+		  data[u]=glyphs[glyph[u]];
+		  widechars[i]=widechar=ucs2string(unicode); i++;
+		}
+		this.data=this.reform(data);
+		KageGlyph.loadBuhins(data);
+		this.setState({unicodes:unicodes,widechars:widechars,fontdataready:true});
 	}
 	,loadFromServer:function() {
 		var toload=this.state.toload;

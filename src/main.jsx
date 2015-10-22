@@ -3,11 +3,11 @@ var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
 var SingleGlyph=require("./singleglyph");
 var dgg=require("../dgg");
-      console.time('load glyph data');
+      console.time('main load glyph data');
 var glyph=require("../glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
 var glyphs=require("../glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
-      console.timeEnd('load glyph data');
-var styles={
+      console.timeEnd('main load glyph data');
+      var styles={
   candidates:{outline:0,cursor:"pointer"}
   ,input:{fontSize:"200%"}
   ,component:{fontSize:"150%"}
@@ -16,18 +16,6 @@ var E=React.createElement;
 var uniutil=require("./uniutil");
 var getutf32=uniutil.getutf32;
 var ucs2string=uniutil.ucs2string;
-var pp=/99[:\d]+([a-z][a-z0-9-]*)/;
-var pg=/99[:\d]+([a-z][a-z0-9-]*)/g;
-var getAllGlyphs=function(data,u){
-    if(data[u])return;
-    var d=glyphs[glyph[u]];
-    data[u]=d;
-    var uu=d.match(pg); // 所有部件組字資訊
-    for(var i=0; i<uu.length; i++){
-      var u=uu[i].match(pp)[1]; // 每個部件名
-      getAllGlyphs(data,u);
-    }
-}
 // var fontserverurl="http://chikage.linode.caasih.net/exploded/?inputs=";
 
 var maincomponent = React.createClass({
@@ -39,7 +27,7 @@ var maincomponent = React.createClass({
     // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
     // var toload="𩀨從䞃致招";
     // 3. b push e pop
-    var toload=""; // 邏羅(寶貝(𩀨從䞃致招))";
+    var toload=""; // 邏羅寶貝𩀨從䞃致招";
     return {searchresult:[],toload:toload}
   }, stack:[]
   ,reform2:function(buhins){
@@ -115,7 +103,7 @@ var maincomponent = React.createClass({
     var data={}, u;
     while (unicode=getutf32(opts)){
       unicodes[i]=u='u'+unicode.toString(16);
-      getAllGlyphs(data,u);
+      dgg.getAllGlyphs(data,u);
       data[u]=glyphs[glyph[u]];
       widechars[i]=widechar=ucs2string(unicode); i++;
     }

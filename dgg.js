@@ -2,6 +2,10 @@
 //
 //browserify -t reactify index.js
 
+      console.time('ddg load glyph data');
+var glyph=require("./glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
+var glyphs=require("./glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
+      console.timeEnd('ddg load glyph data');
 var ucs2string=require("./src/uniutil").ucs2string;
 
 var ucs=function(c){
@@ -119,6 +123,26 @@ var partReplace=function(data,c,d,a){
 		}).reduce(function(x,y){return x||y;});
 	}
 }
+var pp=/99[:\d]+([a-z][a-z0-9-]*)/;
+var pg=/99[:\d]+([a-z][a-z0-9-]*)/g;
+var getAllGlyphs=function(data,u){
+    if(u==="cdp-8bb0")
+      console.log('u==="cdp-8bb0"');
+    if(data[u])
+      return;
+    var i=glyph[u];
+    var d=glyphs[i];
+    if(!d)
+      return;
+    data[u]=d;
+    var uu=d.match(pg); // 所有部件組字資訊
+    if(!uu)
+      return;
+    for(var i=0; i<uu.length; i++){
+      var u=uu[i].match(pp)[1]; // 每個部件名
+      getAllGlyphs(data,u);
+    }
+}
 module.exports={
 	getPoints: getPoints,
 	decode: decode,
@@ -127,5 +151,6 @@ module.exports={
 	adjustMbf: adjustMbf,
 	ucs: ucs,
 	partsReplace: partsReplace,
-	partReplace: partReplace
+	partReplace: partReplace,
+	getAllGlyphs: getAllGlyphs
 }
