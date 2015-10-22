@@ -83,28 +83,15 @@ var SingleGlyph=React.createClass({
 		var keys=Object.keys(data), ucs=dgg.ucs, thefont=this.thefont;
 		if(keys.length){
 			if(thefont){
-			//	out.push(E(KageGlyph,{glyph: 'a', size: size})); // 組合產生的新字
-			//	out.push(E(KageGlyph,{glyph: 'b', size: size})); // 組合產生的新字
-			//	out.push(E(KageGlyph,{glyph: 'c', size: size})); // 組合產生的新字
-			//	out.push(E(KageGlyph,{glyph: 'd', size: size})); // 組合產生的新字
-				if(that.unicodes.length){
-					out.push(E("span",{key:'s0'},that.unicodes.map(function(u){
-						return u+ucs(u)
-					}).join(' ')));
-					out.push(E('br',{key:'b0'}));
-				}
-				out.push(E(KageGlyph,{glyph: thefont, key: 'g0', size: size})); // 組合產生的新字
+				out.push(E(KageGlyph,{glyph: thefont, key: 'g0', size: size})); // 組合產生的字
 				out.push(E('br',{key:'b1'}));
 			}
 			if(checkParam('chk')) keys.forEach(function(key,i){
-				var m=key.match(/^u[\da-f]+/);
-				if(m){
-					var c=m?m[0]:m, dc=data[c];
-					if(c && !dc){
-					  out.push(c+ucs(c)+' ');
-					}
-				}
-				out.push(E("span",{key:'s'+(i+1)},key+ucs(key)));
+				var m=key.match(/^u[\da-f]+/), t='';
+				if(m)
+					t=ucs(key);
+				out.push(t+key+' ');
+			//	out.push(E("span",{key:'s'+(i+1)},t+key))
 				out.push(E(KageGlyph,{glyph: key, key:'g'+(i+1), size: 40}));
 			})
 		}
