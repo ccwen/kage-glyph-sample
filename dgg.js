@@ -72,7 +72,7 @@ var adjustMbf=function (dMbf,aMbf,rect){
 	var Lf=rect[0][0], Tf=rect[0][1], Rf=rect[1][0], Bf=rect[1][1], Wf=Rf-Lf, Hf=Bf-Tf;
 	var Cx=Lf+(Ld+Rd)/2*Wf/200, Cy=Tf+(Td+Bd)/2*Hf/200;
 	var Dx=Wf*Wd/Wa/2, Dy=Hf*Hd/Ha/2;
-	var L=Cx-Dx, T=Cy-Dy, R=Cx+Dx, B=Cy+Dy;
+	var L=Math.round(Cx-Dx), T=Math.round(Cy-Dy), R=Math.round(Cx+Dx), B=Math.round(Cy+Dy);
 	var result=[L,T,R,B];
 	return result;
 }
@@ -81,7 +81,11 @@ var partsReplace=function(data,unicodes){
 	var c=unicodes.shift(), d, a;
 	if(unicodes.length>1){
 		d=unicodes.shift();
-		a=unicodes.length>2?partsReplace(data,unicodes):unicodes.shift();
+		if(unicodes.length>2){
+			a=partsReplace(data,unicodes)
+		} else {
+			a=unicodes.shift();
+		}
 		c=partReplace(data,c,d,a);
 	}
     return c;
@@ -89,7 +93,7 @@ var partsReplace=function(data,unicodes){
 var partReplace=function(data,c,d,a){
 //	c='c',d='d',a='a';
 	if(!Object.keys(data).length) return;
-	var ua=a.match(/^u/)?ucs(a):('('+a+')'), ud=ucs(d), uc=ucs(c), out=uc+ud+ua;
+	var ua=a.match(/^u/)?ucs(a):a, ud=ucs(d), uc=ucs(c), out=uc+ud+ua;
 // 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
 // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
 // data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
@@ -123,8 +127,8 @@ var partReplace=function(data,c,d,a){
 		}).reduce(function(x,y){return x||y;});
 	}
 }
-var pp=/99[:\d]+([a-z][a-z0-9-]*)/;
-var pg=/99[:\d]+([a-z][a-z0-9-]*)/g;
+var pp=/99[:-\d]+([a-z][a-z0-9-]*)/;
+var pg=/99[:-\d]+([a-z][a-z0-9-]*)/g;
 var getAllGlyphs=function(data,u){
     if(u==="cdp-8bb0")
       console.log('u==="cdp-8bb0"');

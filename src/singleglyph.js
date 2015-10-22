@@ -45,8 +45,9 @@ var SingleGlyph=React.createClass({
 		  data[u]=glyphs[glyph[u]];
 		  widechars[i]=widechar=ucs2string(unicode); i++;
 		}
+		this.unicodes=unicodes;
+	//	this.widechars=widechars;
 		this.data=this.reform(data);
-		KageGlyph.loadBuhins(data);
 		this.setState({unicodes:unicodes,widechars:widechars,fontdataready:true});
 	}
 	,loadFromServer:function() {
@@ -69,14 +70,15 @@ var SingleGlyph=React.createClass({
 	,reform:function(buhins){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
-		data['c']="99:0:0:-10:-10:140:140:d$99:0:0:60:60:240:240:b";
-		data['b']="1:0:0:50:100:100:50$1:0:0:100:50:150:100$1:0:0:150:100:100:150$1:0:0:100:150:50:100";
-		data['d']="1:0:0:50:50:150:50$1:0:0:150:50:150:150$1:0:0:150:150:50:150$1:0:0:50:150:50:50";
-		data['a']="1:0:0:50:50:150:150$1:0:0:50:150:150:50";
+	//	data['c']="99:0:0:-10:-10:140:140:d$99:0:0:60:60:240:240:b";
+	//	data['b']="1:0:0:50:100:100:50$1:0:0:100:50:150:100$1:0:0:150:100:100:150$1:0:0:100:150:50:100";
+	//	data['d']="1:0:0:50:50:150:50$1:0:0:150:50:150:150$1:0:0:150:150:50:150$1:0:0:50:150:50:50";
+	//	data['a']="1:0:0:50:50:150:150$1:0:0:50:150:150:50";
 		this.thefont=dgg.partsReplace(data,this.unicodes);
+		KageGlyph.loadBuhins(data);
 		return data;
 	}
-	,renderGlyphs:function(toload) {
+	,renderGlyphs:function(toload,that) {
 		var size=this.state.size, out=[], data=this.data;
 		var keys=Object.keys(data), ucs=dgg.ucs, thefont=this.thefont;
 		if(keys.length){
@@ -85,8 +87,14 @@ var SingleGlyph=React.createClass({
 			//	out.push(E(KageGlyph,{glyph: 'b', size: size})); // 組合產生的新字
 			//	out.push(E(KageGlyph,{glyph: 'c', size: size})); // 組合產生的新字
 			//	out.push(E(KageGlyph,{glyph: 'd', size: size})); // 組合產生的新字
-				out.push(E(KageGlyph,{glyph: thefont, key: 'a1', size: size})); // 組合產生的新字
-				out.push(E('br',{key:'a2'}));
+				if(that.unicodes.length){
+					out.push(E("span",{key:'s0'},that.unicodes.map(function(u){
+						return u+ucs(u)
+					}).join(' ')));
+					out.push(E('br',{key:'b0'}));
+				}
+				out.push(E(KageGlyph,{glyph: thefont, key: 'g0', size: size})); // 組合產生的新字
+				out.push(E('br',{key:'b1'}));
 			}
 			if(checkParam('chk')) keys.forEach(function(key,i){
 				var m=key.match(/^u[\da-f]+/);
@@ -96,8 +104,8 @@ var SingleGlyph=React.createClass({
 					  out.push(c+ucs(c)+' ');
 					}
 				}
-				out.push(E("span",{key:'a'+(i+1)},key+ucs(key)));
-				out.push(E(KageGlyph,{glyph: key, key:i+1, size: 40}));
+				out.push(E("span",{key:'s'+(i+1)},key+ucs(key)));
+				out.push(E(KageGlyph,{glyph: key, key:'g'+(i+1), size: 40}));
 			})
 		}
 		return out;
@@ -105,7 +113,7 @@ var SingleGlyph=React.createClass({
 	,render:function() {
 		var out='nothing yet';
 		if(this.state.fontdataready)
-			out=this.renderGlyphs(this.state.toload);
+			out=this.renderGlyphs(this.state.toload,this);
 		return E("div", null, out);
 	}
 })
