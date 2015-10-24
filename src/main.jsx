@@ -1,3 +1,12 @@
+(function(){
+  var o={};
+  for (var i=0;i<GLYPH.length;i++) {
+    o[GLYPH[i]]=i;
+  }
+  glyph=window.GLYPH=o;
+})();
+
+
 var React=require("react");
 var Kage=require("kage").Kage;
 var KageGlyph=require("./kageglyph");
@@ -8,6 +17,8 @@ var dgg=require("../dgg");
 //var glyphs=require("../glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
 var glyphs=GLYPHS;
 var glyph=GLYPH;
+
+
       console.timeEnd('main load glyph data');
       var styles={
   candidates:{outline:0,cursor:"pointer"}
