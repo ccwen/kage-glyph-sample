@@ -1,5 +1,6 @@
 (function(){
   var o={};
+  GLYPH=GLYPH.split(";");
   for (var i=0;i<GLYPH.length;i++) {
     o[GLYPH[i]]=i;
   }
