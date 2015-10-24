@@ -3,9 +3,11 @@
 //browserify -t reactify index.js
 
       console.time('ddg load glyph data');
-var glyph=require("./glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
-var glyphs=require("./glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
-      console.timeEnd('ddg load glyph data');
+//var glyph=require("./glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
+//var glyphs=require("./glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
+//      console.timeEnd('ddg load glyph data');
+var glyph=GLYPH;
+var glyphs=GLYPHS;
 var ucs2string=require("./src/uniutil").ucs2string;
 
 var ucs=function(c){
