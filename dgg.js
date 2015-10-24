@@ -46,7 +46,7 @@ var getPoints=function(glyphs){
 var getPartRect=function(glyphs,partId){ 
 	var frameHieght, frameWidth;
 	for(var i=0; i<glyphs.length; i++){
-		glyph=glyphs[i];
+		glyph=glyphs[i].replace(/~/g,"99:0:0:");
 		if(glyph.partId===partId){
 			return glyph.p;
 		}n
@@ -137,7 +137,7 @@ var getAllGlyphs=function(data,u){
     if(data[u])
       return;
     var i=glyph[u];
-    var d=glyphs[i];
+    var d=glyphs[i].replace(/~/g,"99:0:0:");;
     if(!d)
       return;
     data[u]=d;

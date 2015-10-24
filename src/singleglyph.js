@@ -44,7 +44,7 @@ var SingleGlyph=React.createClass({
 		while (unicode=getutf32(opts)){
 		  unicodes[i]=u='u'+unicode.toString(16);
 		  dgg.getAllGlyphs(data,u);
-		  data[u]=glyphs[glyph[u]];
+		  data[u]=glyphs[glyph[u]].replace(/~/g,"99:0:0:");
 		  widechars[i]=widechar=ucs2string(unicode); i++;
 		}
 		this.unicodes=unicodes;
