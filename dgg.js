@@ -19,7 +19,7 @@ var decode=function(infos){
 	var glyphs=infos.split('$').map(function(info){
 		var values=info.split(":");
 		var t=values[0], sd=values[1], ed=values[2], x, y;
-		var points=[], xyPairs=values.slice(3);
+		var points=[], xyPairs=t=='99'?values.slice(3,7):values.slice(3);
 		xyPairs.forEach(function(v,i){ var n=v;
 			if(i%2===0) x=n;
 			else { y=n, points.push([parseInt(x),parseInt(y)]), x=undefined; }
