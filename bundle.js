@@ -10328,6 +10328,8 @@ var SingleGlyph=React.createClass({displayName: "SingleGlyph",
 				out.push(E(KageGlyph,{glyph: key, key:i++, size: 40}));
 			})*/
 		}
+		if(!checkParam('chk'))
+			return out;
 		var c=thefont, u;
 		if(c.match(/^u[0-9a-f]{4,5}?/))
 			u=c, c=ucs(u);
