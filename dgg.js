@@ -1,20 +1,11 @@
 // dgg.js -- functions for dynamic glyph generation
-//
+console.log('loading ddg.js');
 //browserify -t reactify index.js
-
-      console.time('ddg load glyph data');
-//var glyph=require("./glyph"); // i=glyph['u3400']=0, j=glyph['u20003-jv']=80459, ...
-//var glyphs=require("./glyphs"); // data['u3400']=glyphs[0], data['u20003-jv']=glyphs[j], ...
-//      console.timeEnd('ddg load glyph data');
-var glyph=GLYPH;
-var glyphs=GLYPHS;
+//var glyph=GLYPH;
+//var glyphs=GLYPHS;
 var ucs2string=require("./src/uniutil").ucs2string;
-
-var ucs=function(c){
-	if(c)
-		return c.match(/^u/)?ucs2string(parseInt(c.substr(1),16)):c;
-}
-
+var ucs=function(c){ // 回 unicode 字串對應的中文字
+	if(c)return ucs2string(parseInt(c.substr(1),16)).replace(/\r/,'');}
 var decode=function(infos){
 	var glyphs=infos.split('$').map(function(info){
 		var values=info.split(":");
@@ -132,18 +123,21 @@ var partReplace=function(data,c,d,a){
 var pp=/99[:-\d]+([a-z][a-z0-9-]*)/;
 var pg=/99[:-\d]+([a-z][a-z0-9-]*)/g;
 var getAllGlyphs=function(data,u){
-    if(u==="cdp-8bb0")
-      console.log('u==="cdp-8bb0"');
     if(data[u])
       return;
-    var i=glyph[u];
-    var d=glyphs[i].replace(/~/g,"99:0:0:");;
-    if(!d)
+    var i=GLYPH[u];
+    if(!i)
       return;
+    var d=GLYPHS[i].replace(/~/g,"99:0:0:");
     data[u]=d;
     var uu=d.match(pg); // 所有部件組字資訊
     if(!uu)
       return;
+    console.log(ucs(u)+u+' <-- '+uu.map(function(u){
+    	u=u.match(pp)[1];
+    	var c=ucs(u);
+    	return c+u;
+    }).join(' '));
     for(var i=0; i<uu.length; i++){
       var u=uu[i].match(pp)[1]; // 每個部件名
       getAllGlyphs(data,u);
