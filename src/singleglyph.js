@@ -101,14 +101,14 @@ var SingleGlyph=React.createClass({
 			if(thefont){
 				out.push(E(KageGlyph,{glyph: thefont, key: i++, size: size})); // 組合產生的字
 				out.push(E('br',{key:i++}));
-			}/*
+			}
 			if(checkParam('chk')) keys.forEach(function(key){
 				var m=key.match(/^u[\da-f]+/), t='';
 				if(m)
 					t=ucs(key);
 				out.push(E("span",{key:i++},t+key+' '));
 				out.push(E(KageGlyph,{glyph: key, key:i++, size: 40}));
-			})*/
+			})
 		}
 		if(!checkParam('chk'))
 			return out;
