@@ -1,6 +1,6 @@
 jsonp_handler({
  "version": "1",
- "build": 785,
+ "build": 804,
  "title": "kage-glyph-sample",
  "minruntime": 1,
  "baseurl": "http://rawgit.com/ksanaforge/kage-glyph-sample/master/",
@@ -32,7 +32,7 @@ jsonp_handler({
   84,
   671592,
   136638,
-  353265,
+  354004,
   861
  ],
  "filedates": [
@@ -40,8 +40,8 @@ jsonp_handler({
   "2015-09-26T14:20:45.107Z",
   "2015-10-15T10:26:00.967Z",
   "2015-10-15T10:25:56.627Z",
-  "2015-11-11T07:29:32.813Z",
-  "2015-11-06T05:46:58.472Z"
+  "2015-11-19T09:38:59.184Z",
+  "2015-11-19T09:25:40.856Z"
  ],
- "date": "2015-11-11T07:29:33.798Z"
+ "date": "2015-11-19T09:39:00.175Z"
 })

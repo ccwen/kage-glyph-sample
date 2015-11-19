@@ -59,13 +59,19 @@ var minimumBounding=function(points){
 	});
 	return mbf;
 }
+var mbf=function(data,a){
+	return minimumBounding(getPoints(decode(data[a])));
+}
 var adjustMbf=function (dMbf,aMbf,rect){
 	var Ld=dMbf[0], Td=dMbf[1], Rd=dMbf[2], Bd=dMbf[3], Wd=Rd-Ld, Hd=Bd-Td;
 	var La=aMbf[0], Ta=aMbf[1], Ra=aMbf[2], Ba=aMbf[3], Wa=Ra-La, Ha=Ba-Ta;
-	var Lf=rect[0][0], Tf=rect[0][1], Rf=rect[1][0], Bf=rect[1][1], Wf=Rf-Lf, Hf=Bf-Tf;
-	var Cx=Lf+(Ld+Rd)/2*Wf/200, Cy=Tf+(Td+Bd)/2*Hf/200;
-	var Dx=Wf*Wd/Wa/2, Dy=Hf*Hd/Ha/2;
-	var L=Math.round(Cx-Dx), T=Math.round(Cy-Dy), R=Math.round(Cx+Dx), B=Math.round(Cy+Dy);
+	var Lc=rect[0][0], Tc=rect[0][1], Rc=rect[1][0], Bc=rect[1][1], Wc=Rc-Lc, Hc=Bc-Tc;	// sam
+	var L=Math.round(Lc-(Wd-Wa)/400), T=Math.round(Tc-(Hd-Ha)/400); // sam
+	var Wx=Wc*Wd/Wa, Hx=Hc*Hd/Ha; // sam
+	var R=Math.round(L+Wx), B=Math.round(T+Hx);
+//	var Cx=Lf+(Ld+Rd)/2*Wf/200, Cy=Tf+(Td+Bd)/2*Hf/200;
+//	var Dx=Wf*Wd/Wa/2, Dy=Hf*Hd/Ha/2;
+//	var L=Math.round(Cx-Dx), T=Math.round(Cy-Dy), R=Math.round(Cx+Dx), B=Math.round(Cy+Dy);
 	var result=[L,T,R,B];
 	return result;
 }
@@ -86,7 +92,8 @@ var partsReplace=function(data,unicodes){
 var partReplace=function(data,c,d,a){
 //	c='c',d='d',a='a';
 	if(!Object.keys(data).length) return;
-	var ua=a.match(/^u/)?ucs(a):a, ud=ucs(d), uc=ucs(c), out=uc+ud+ua;
+	var m=c.match(/^u[0-9a-f]+(.*)$/);
+	var ua=a.match(/^u/)?ucs(a):a, ud=ucs(d), uc=ucs(c)+m[1], out=uc+ud+ua;
 // 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
 // 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
 // data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
@@ -100,10 +107,19 @@ var partReplace=function(data,c,d,a){
 	// "99:0:0:0:-2:200:216:u6728-03$99:0:0:0:-20:200:200:u5b50-04" // 取得 李 的 資訊
 	if(md=dc.match(pd)){ // 若 c 含 部件 d, 則 dd 為實際 d 的 unocode
 		var ds=md[0], dd=md[1]; // ds 為待替換的資訊 準備改以 rr 資訊 將 dd 換為 a 並修正 範圍
+		var md=dd.match(RegExp('^'+d+'(.+)$')); // sam 20151119
+		if(md && data[dd].match(pd)){ // sam 20151119
+			var x=partReplace(data,dd,d,a); // sam 20151119
+			data[out]=dc.replace(dd,x);
+			return out; // sam 20151119
+		} // sam 20151119
 		var m=ds.match(/^(\d+:\d+:\d+:)([-\d]+):([-\d]+):([-\d]+):([-\d]+)/);
-		var r=[[parseInt(m[2]),parseInt(m[3])],[parseInt(m[4]),parseInt(m[5])]];
-		var dMbf=minimumBounding(getPoints(decode(data[dd])));
-		var aMbf=minimumBounding(getPoints(decode(data[a])));
+		var x=m.slice(2,6).map(function(n){
+			return parseInt(n);
+		})
+		var r=[[x[0],x[1]],[x[2],x[3]]];
+		var dMbf=mbf(data,dd), aMbf=mbf(data,a);
+		console.log('在 '+uc+' 200x200 字形 框 ['+x.join()+'] 內 將 '+ud+' 200x200 字形 框 ['+dMbf.join()+'] 內筆畫 換為 '+ua+' 200x200 字形 框 ['+aMbf.join()+'] 內筆畫');
 		var adj=adjustMbf(dMbf,aMbf,r);
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc=dc.replace(ds,rr);
@@ -133,15 +149,15 @@ var getAllGlyphs=function(data,u){
     var uu=d.match(pg); // 所有部件組字資訊
     if(!uu)
       return;
-    console.log(ucs(u)+u+' <-- '+uu.map(function(u){
-    	u=u.match(pp)[1];
-    	var c=ucs(u);
-    	return c+u;
+    var up=uu.map(function(u){return u.match(pp)[1];});
+    console.log('data["'+u+'"]="'+data[u]+'"');
+    console.log(ucs(u)+u+' <-- '+up.map(function(u){
+    	return ucs(u)+u;
     }).join(' '));
-    for(var i=0; i<uu.length; i++){
-      var u=uu[i].match(pp)[1]; // 每個部件名
-      getAllGlyphs(data,u);
-    }
+	up.forEach(function(u){
+    	getAllGlyphs(data,u);
+    	console.log('data["'+u+'"]="'+data[u]+'"');
+	});
 }
 module.exports={
 	getPoints: getPoints,
