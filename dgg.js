@@ -62,6 +62,57 @@ var minimumBounding=function(points){
 var mbf=function(data,a){
 	return minimumBounding(getPoints(decode(data[a])));
 }
+var mapX=function(x,f1,f2){
+  var L1=f1[0],T1=f1[1],R1=f1[2],B1=f1[3],W1=R1-L1,H1=B1-T1;
+  var L2=f2[0],T2=f2[1],R2=f2[2],B2=f2[3],W2=R2-L2,H2=B2-T2;
+  return Math.round((x-L1)*W2/W1+L2); 
+}
+var mapY=function(y,f1,f2){
+  var L1=f1[0],T1=f1[1],R1=f1[2],B1=f1[3],W1=R1-L1,H1=B1-T1;
+  var L2=f2[0],T2=f2[1],R2=f2[2],B2=f2[3],W2=R2-L2,H2=B2-T2;
+  return Math.round((y-T1)*H2/H1+T2); 
+}
+var deepMbf=function(data,d){
+	var xmi=999, xma=-999, ymi=999, yma=-999;
+	var items=data[d].split('$');
+	for(var i=0; i<items.length; i++){
+		var item=items[i];
+		var m=item.match(/^99.+?:([-0-9]+):([-0-9]+):([-0-9]+):([-0-9]+):(u[^:]+)/);
+		if(m){ // nested //////////////////////////////////////////
+			var p=m[5], frame=m.slice(1,5);
+			var f=deepMbf(data,p);
+			var xmi=mapX(f[0],frame,[0,0,200,200]);
+			var ymi=mapY(f[1],frame,[0,0,200,200]);
+			var xma=mapX(f[2],frame,[0,0,200,200]);
+			var yma=mapY(f[3],frame,[0,0,200,200]);
+			console.log('['+m.slice(1,5).join()+'] '+m[5]);
+			return [xmi,ymi,xma,yma];
+		} else {
+			m=item.match(/^(\d+:){3}([-0-9:]+)/);
+			if(m){
+				var t=m.slice(2)[0];
+				var points=t.match(/([-0-9]+):([-0-9]+)/g).map(function(s){
+					var i=s.indexOf(':');
+					return {x:parseInt(s.substr(0,i)),y:parseInt(s.substr(i+1))}
+				})
+				points.forEach(function(p){
+					var x=p.x, y=p.y;
+					if (xmi>x)
+						xmi=x;
+					else if (xma<x)
+						xma=x;
+					if (ymi>y)
+						ymi=y;
+					else if (yma<y)
+						yma=y;
+				})
+			}
+		}
+	}
+	if( xmi>xma || ymi>yma )
+		return; // not found
+	return [xmi,ymi,xma,yma];
+}
 var adjustMbf=function (dMbf,aMbf,rect){
 	var Ld=dMbf[0], Td=dMbf[1], Rd=dMbf[2], Bd=dMbf[3], Wd=Rd-Ld, Hd=Bd-Td;
 	var La=aMbf[0], Ta=aMbf[1], Ra=aMbf[2], Ba=aMbf[3], Wa=Ra-La, Ha=Ba-Ta;
@@ -118,9 +169,12 @@ var partReplace=function(data,c,d,a){
 			return parseInt(n);
 		})
 		var r=[[x[0],x[1]],[x[2],x[3]]];
-		var dMbf=mbf(data,dd), aMbf=mbf(data,a);
-		console.log('在 '+uc+' 200x200 字形 框 ['+x.join()+'] 內 將 '+ud+' 200x200 字形 框 ['+dMbf.join()+'] 內筆畫 換為 '+ua+' 200x200 字形 框 ['+aMbf.join()+'] 內筆畫');
-		var adj=adjustMbf(dMbf,aMbf,r);
+		var dMbf=mbf(data,dd), aMbf=deepMbf(data,a);
+		console.log('在 '+uc+' 200x200 字形中 框 ['+x.join()+'] 內 將 '+ud+' 200x200 字形 框 ['+dMbf.join()+'] 內筆畫 換為 '+ua+' 200x200 字形 框 ['+aMbf.join()+'] 內筆畫');
+//		var adj=adjustMbf(dMbf,aMbf,r);
+		var adj=r[0].concat(r[1]).map(function(x,i){
+			return i%2?mapY(x,dMbf,aMbf):mapX(x,dMbf,aMbf)
+		});
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc=dc.replace(ds,rr);
 		return out;
