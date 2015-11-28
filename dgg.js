@@ -79,31 +79,33 @@ var deepMbf=function(data,d){
 		var item=items[i];
 		var m=item.match(/^99.+?:([-0-9]+):([-0-9]+):([-0-9]+):([-0-9]+):(u[^:]+)/);
 		if(m){ // nested //////////////////////////////////////////
-			var p=m[5], frame=m.slice(1,5);
-			var f=deepMbf(data,p);
-			var xmi=mapX(f[0],frame,[0,0,200,200]);
-			var ymi=mapY(f[1],frame,[0,0,200,200]);
-			var xma=mapX(f[2],frame,[0,0,200,200]);
-			var yma=mapY(f[3],frame,[0,0,200,200]);
-			console.log('['+m.slice(1,5).join()+'] '+m[5]);
-			return [xmi,ymi,xma,yma];
+			var p=m[5], frame=m.slice(1,5).map(function(n){return parseInt(n);});
+			var r=[0,0,200,200];
+			var F=deepMbf(data,p);
+			if(p==='u866b') // 虫 for 虭虫礻
+				console.log("p==='u53e3'");
+			var f=F.map(function(x,i){
+				return i%2?mapY(x,r,frame):mapX(x,r,frame);
+			});
+			xmi=Math.min(f[0],xmi), xma=Math.max(f[2],xma);
+			ymi=Math.min(f[1],ymi), yma=Math.max(f[3],yma);
 		} else {
 			m=item.match(/^(\d+:){3}([-0-9:]+)/);
 			if(m){
 				var t=m.slice(2)[0];
 				var points=t.match(/([-0-9]+):([-0-9]+)/g).map(function(s){
-					var i=s.indexOf(':');
-					return {x:parseInt(s.substr(0,i)),y:parseInt(s.substr(i+1))}
+					var j=s.indexOf(':');
+					return {x:parseInt(s.substr(0,j)),y:parseInt(s.substr(j+1))}
 				})
 				points.forEach(function(p){
 					var x=p.x, y=p.y;
 					if (xmi>x)
 						xmi=x;
-					else if (xma<x)
+					if (xma<x)
 						xma=x;
 					if (ymi>y)
 						ymi=y;
-					else if (yma<y)
+					if (yma<y)
 						yma=y;
 				})
 			}
@@ -117,12 +119,22 @@ var adjustMbf=function (dMbf,aMbf,rect){
 	var Ld=dMbf[0], Td=dMbf[1], Rd=dMbf[2], Bd=dMbf[3], Wd=Rd-Ld, Hd=Bd-Td;
 	var La=aMbf[0], Ta=aMbf[1], Ra=aMbf[2], Ba=aMbf[3], Wa=Ra-La, Ha=Ba-Ta;
 	var Lc=rect[0][0], Tc=rect[0][1], Rc=rect[1][0], Bc=rect[1][1], Wc=Rc-Lc, Hc=Bc-Tc;	// sam
-	var L=Math.round(Lc-(Wd-Wa)/400), T=Math.round(Tc-(Hd-Ha)/400); // sam
+/*															// 2015/11/28 sam
+	var L=Math.round(Lc-(Wd-Wa)/400), T=Math.round(Tc-(Hd-Ha)/400);
 	var Wx=Wc*Wd/Wa, Hx=Hc*Hd/Ha; // sam
 	var R=Math.round(L+Wx), B=Math.round(T+Hx);
 //	var Cx=Lf+(Ld+Rd)/2*Wf/200, Cy=Tf+(Td+Bd)/2*Hf/200;
 //	var Dx=Wf*Wd/Wa/2, Dy=Hf*Hd/Ha/2;
 //	var L=Math.round(Cx-Dx), T=Math.round(Cy-Dy), R=Math.round(Cx+Dx), B=Math.round(Cy+Dy);
+*/															// 2015/11/28 sam
+// (Ld-L)=(La-Lr)											// 2015/11/28 sam
+//	==> L=Lr-La+Ld // Lr 平移								// 2015/11/28 sam
+//	==> T=Tr-Ta+Td // Tr 平移								// 2015/11/28 sam
+// (R-L)/Wr=Wd/Wa ==> R/Wr-L/Wr=Wd/Wa ==> R/Wr=Wd/Wa+L/Wr	// 2015/11/28 sam
+//	==> R=Wd/Wa*Wr+L // Wr 縮放 							// 2015/11/28 sam
+//	==> B=Hd/Ha*Hr+T // Hr 縮放								// 2015/11/28 sam
+	var L=Ld-La+Lr, T=Td-Ta+Tr;
+	var R=Math.round(Wd/Wa*Wr)+L, B=Math.round(Hd/Ha*Hr)+T;
 	var result=[L,T,R,B];
 	return result;
 }
@@ -169,7 +181,7 @@ var partReplace=function(data,c,d,a){
 			return parseInt(n);
 		})
 		var r=[[x[0],x[1]],[x[2],x[3]]];
-		var dMbf=mbf(data,dd), aMbf=deepMbf(data,a);
+		var dMbf=deepMbf(data,dd), aMbf=deepMbf(data,a);
 		console.log('在 '+uc+' 200x200 字形中 框 ['+x.join()+'] 內 將 '+ud+' 200x200 字形 框 ['+dMbf.join()+'] 內筆畫 換為 '+ua+' 200x200 字形 框 ['+aMbf.join()+'] 內筆畫');
 //		var adj=adjustMbf(dMbf,aMbf,r);
 		var adj=r[0].concat(r[1]).map(function(x,i){
