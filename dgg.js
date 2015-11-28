@@ -127,14 +127,14 @@ var adjustMbf=function (dMbf,aMbf,rect){
 //	var Dx=Wf*Wd/Wa/2, Dy=Hf*Hd/Ha/2;
 //	var L=Math.round(Cx-Dx), T=Math.round(Cy-Dy), R=Math.round(Cx+Dx), B=Math.round(Cy+Dy);
 */															// 2015/11/28 sam
-// (Ld-L)=(La-Lr)											// 2015/11/28 sam
-//	==> L=Lr-La+Ld // Lr 平移								// 2015/11/28 sam
-//	==> T=Tr-Ta+Td // Tr 平移								// 2015/11/28 sam
-// (R-L)/Wr=Wd/Wa ==> R/Wr-L/Wr=Wd/Wa ==> R/Wr=Wd/Wa+L/Wr	// 2015/11/28 sam
-//	==> R=Wd/Wa*Wr+L // Wr 縮放 							// 2015/11/28 sam
-//	==> B=Hd/Ha*Hr+T // Hr 縮放								// 2015/11/28 sam
-	var L=Ld-La+Lr, T=Td-Ta+Tr;
-	var R=Math.round(Wd/Wa*Wr)+L, B=Math.round(Hd/Ha*Hr)+T;
+// (Ld-L)=(La-Lc)											// 2015/11/28 sam
+//	==> L=Lc-La+Ld // Lc 平移								// 2015/11/28 sam
+//	==> T=Tc-Ta+Td // Tc 平移								// 2015/11/28 sam
+// (R-L)/Wc=Wd/Wa ==> R/Wc-L/Wc=Wd/Wa ==> R/Wc=Wd/Wa+L/Wc	// 2015/11/28 sam
+//	==> R=Wd/Wa*Wc+L // Wc 縮放 							// 2015/11/28 sam
+//	==> B=Hd/Ha*Hc+T // Hc 縮放								// 2015/11/28 sam
+	var L=Ld-La+Lc, T=Td-Ta+Tc;
+	var R=Math.round(Wd/Wa*Wc)+L, B=Math.round(Hd/Ha*Hc)+T;
 	var result=[L,T,R,B];
 	return result;
 }
@@ -183,10 +183,10 @@ var partReplace=function(data,c,d,a){
 		var r=[[x[0],x[1]],[x[2],x[3]]];
 		var dMbf=deepMbf(data,dd), aMbf=deepMbf(data,a);
 		console.log('在 '+uc+' 200x200 字形中 框 ['+x.join()+'] 內 將 '+ud+' 200x200 字形 框 ['+dMbf.join()+'] 內筆畫 換為 '+ua+' 200x200 字形 框 ['+aMbf.join()+'] 內筆畫');
-//		var adj=adjustMbf(dMbf,aMbf,r);
-		var adj=r[0].concat(r[1]).map(function(x,i){
-			return i%2?mapY(x,dMbf,aMbf):mapX(x,dMbf,aMbf)
-		});
+		var adj=adjustMbf(dMbf,aMbf,r);						// 20151128 sam
+//		var adj=r[0].concat(r[1]).map(function(x,i){		// 20151128 sam
+//			return i%2?mapY(x,dMbf,aMbf):mapX(x,dMbf,aMbf)	// 20151128 sam
+//		});													// 20151128 sam
 		var rr=m[1]+adj.join(':')+':'+a;
 		data[out]=dc=dc.replace(ds,rr);
 		return out;
