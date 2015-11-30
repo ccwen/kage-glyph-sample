@@ -57,7 +57,8 @@ var SingleGlyph=React.createClass({
 		  } else u='u'+unicode.toString(16);
 		  unicodes[i]=u;
 		  dgg.getAllGlyphs(data,u);
-		  data[u]=glyphs[glyph[u]].replace(/~/g,"99:0:0:");
+		  if(data[u])
+		  	  data[u]=glyphs[glyph[u]].replace(/~/g,"99:0:0:");
 		  widechars[i]=widechar; i++;
 		}
 		this.unicodes=unicodes;

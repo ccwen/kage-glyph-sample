@@ -78,11 +78,13 @@ var mapRect=function(rect,f1,f2){
 	})
 }
 var deepMbf=function(data,u){ // mbf in given rect ?????
+//	if(u==="𩀨從䞃致招")
+//		console.log('u==="𩀨從䞃致招"');
 	var xmi=999, xma=-999, ymi=999, yma=-999;
 	var items=data[u].split('$');
 	for(var i=0; i<items.length; i++){
 		var item=items[i];
-		var m=item.match(/((:[-0-9]+){4}):([a-z][^:]+)/);
+		var m=item.match(/((:[-0-9]+){4}):([^-0-9:][^:]+)/);
 		if(m){ // nested //////////////////////////////////////////
 			var p=m[3], fs=m[1].substr(1).replace(/:/g,',');
 			var frame=fs.split(',').map(function(n){return parseInt(n);});
@@ -172,7 +174,7 @@ var partReplace=function(data,c,d,a){
 	var pd=RegExp(sd); // 直接搜尋 部件 d
 	var md=dc.match(pd); // 在 data[c] 中搜尋 部件 d
 	if(md){ // d 不是 c 的 直接部件 遞迴搜尋 檢視 部件 的 部件 // 萌日目
-		if(!a){ // 無 a 表示 刪除 部件 d
+		if(!data[a]){ // 無 a 表示 刪除 部件 d
 			data[out]=dc.replace(md[0],'').replace(/^\$|\$$/,'');
 			return out;
 		}
