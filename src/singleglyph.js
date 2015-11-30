@@ -110,22 +110,6 @@ var SingleGlyph=React.createClass({
 				out.push(E(KageGlyph,{glyph: key, key:i++, size: 40}));
 			})
 		}
-		if(!checkParam('chk'))
-			return out;
-		var c=thefont, u;
-		if(c.match(/^u[0-9a-f]{4,5}?/))
-			u=c, c=ucs(u);
-		else
-			u='u'+getutf32({widestring:c}).toString(16);
-		out.push(E('br',{key:'b1'}));
-		var pp=getParts(u);
-		if(pp){
-			var L=pp.split(' ');
-			L.forEach(function(u,j){
-				out.push(E("span",{key:i++,'font-size':10},j+ucs(u)+u));
-				out.push(E(KageGlyph,{glyph: u, key:i++, size: 40}));
-			})
-		}
 		return out;
 	}
 	,render:function() {

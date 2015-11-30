@@ -16,7 +16,7 @@ var getParts=function(u){
     if(out.indexOf(child)<0)
       out+=' '+getParts(child);
   }
-  console.log(out.replace(/ /,' <-- '));
+//console.log(out.replace(/ /,' <-- '));
   return out;
 }
 var getUnicodeParts=function(unicode) {
@@ -34,5 +34,5 @@ var getUnicodeParts=function(unicode) {
 	out.shift();//drop first
 	return out;
 }
-console.log("萌",getUnicodeParts("萌"));
+//console.log("萌",getUnicodeParts("萌"));
 module.exports={getParts:getParts,getUnicodeParts};

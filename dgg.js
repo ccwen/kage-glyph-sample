@@ -63,62 +63,63 @@ var mbf=function(data,a){
 	return minimumBounding(getPoints(decode(data[a])));
 }
 var mapX=function(x,f1,f2){
-  var L1=f1[0],T1=f1[1],R1=f1[2],B1=f1[3],W1=R1-L1,H1=B1-T1;
-  var L2=f2[0],T2=f2[1],R2=f2[2],B2=f2[3],W2=R2-L2,H2=B2-T2;
+  var L1=f1[0],R1=f1[2],W1=R1-L1;
+  var L2=f2[0],R2=f2[2],W2=R2-L2;
   return Math.round((x-L1)*W2/W1+L2); 
 }
 var mapY=function(y,f1,f2){
-  var L1=f1[0],T1=f1[1],R1=f1[2],B1=f1[3],W1=R1-L1,H1=B1-T1;
-  var L2=f2[0],T2=f2[1],R2=f2[2],B2=f2[3],W2=R2-L2,H2=B2-T2;
+  var T1=f1[1],B1=f1[3],H1=B1-T1;
+  var T2=f2[1],B2=f2[3],H2=B2-T2;
   return Math.round((y-T1)*H2/H1+T2); 
 }
-var deepMbf=function(data,d){
+var mapRect=function(rect,f1,f2){
+	return rect.map(function(v,i){
+		return i%2?mapY(v,f1,f2):mapX(v,f1,f2);
+	})
+}
+var deepMbf=function(data,u){ // mbf in given rect ?????
 	var xmi=999, xma=-999, ymi=999, yma=-999;
-	var items=data[d].split('$');
+	var items=data[u].split('$');
 	for(var i=0; i<items.length; i++){
 		var item=items[i];
-		var m=item.match(/^99.+?:([-0-9]+):([-0-9]+):([-0-9]+):([-0-9]+):(u[^:]+)/);
+		var m=item.match(/((:[-0-9]+){4}):([a-z][^:]+)/);
 		if(m){ // nested //////////////////////////////////////////
-			var p=m[5], frame=m.slice(1,5).map(function(n){return parseInt(n);});
+			var p=m[3], fs=m[1].substr(1).replace(/:/g,',');
+			var frame=fs.split(',').map(function(n){return parseInt(n);});
 			var r=[0,0,200,200];
-			var F=deepMbf(data,p);
-			if(p==='u866b') // 虫 for 虭虫礻
-				console.log("p==='u53e3'");
-			var f=F.map(function(x,i){
-				return i%2?mapY(x,r,frame):mapX(x,r,frame);
+			var f=deepMbf(data,p);
+			console.log('map '+JSON.stringify(f)+' from '+JSON.stringify(r)+' to '+JSON.stringify(frame));
+			f.forEach(function(v,i){
+				if(i%2===0){
+					var x=mapX(v,r,frame); xmi=Math.min(x,xmi), xma=Math.max(x,xma);
+				} else {
+					var y=mapY(v,r,frame); ymi=Math.min(y,ymi), yma=Math.max(y,yma);
+				}
 			});
-			xmi=Math.min(f[0],xmi), xma=Math.max(f[2],xma);
-			ymi=Math.min(f[1],ymi), yma=Math.max(f[3],yma);
 		} else {
 			m=item.match(/^(\d+:){3}([-0-9:]+)/);
 			if(m){
-				var t=m.slice(2)[0];
-				var points=t.match(/([-0-9]+):([-0-9]+)/g).map(function(s){
-					var j=s.indexOf(':');
-					return {x:parseInt(s.substr(0,j)),y:parseInt(s.substr(j+1))}
-				})
-				points.forEach(function(p){
-					var x=p.x, y=p.y;
-					if (xmi>x)
-						xmi=x;
-					if (xma<x)
-						xma=x;
-					if (ymi>y)
-						ymi=y;
-					if (yma<y)
-						yma=y;
-				})
+				var xy=m[2].split(':').map(function(v,i){return parseInt(v)});
+				xy.forEach(function(v,i){
+					if(i%2===0){
+						var x=v; xmi=Math.min(x,xmi), xma=Math.max(x,xma);
+					} else {
+						var y=v; ymi=Math.min(y,ymi), yma=Math.max(y,yma);
+					}
+				});
 			}
 		}
 	}
 	if( xmi>xma || ymi>yma )
 		return; // not found
-	return [xmi,ymi,xma,yma];
+	var mbf=[xmi,ymi,xma,yma];
+	console.log('deepMbf(data,"'+u+'")=['+mbf.join()+']');
+	return mbf;
 }
 var adjustMbf=function (dMbf,aMbf,rect){
 	var Ld=dMbf[0], Td=dMbf[1], Rd=dMbf[2], Bd=dMbf[3], Wd=Rd-Ld, Hd=Bd-Td;
 	var La=aMbf[0], Ta=aMbf[1], Ra=aMbf[2], Ba=aMbf[3], Wa=Ra-La, Ha=Ba-Ta;
-	var Lc=rect[0][0], Tc=rect[0][1], Rc=rect[1][0], Bc=rect[1][1], Wc=Rc-Lc, Hc=Bc-Tc;	// sam
+	var Lc=rect[0], Tc=rect[1], Rc=rect[2], Bc=rect[3], Wc=Rc-Lc, Hc=Bc-Tc;
 /*															// 2015/11/28 sam
 	var L=Math.round(Lc-(Wd-Wa)/400), T=Math.round(Tc-(Hd-Ha)/400);
 	var Wx=Wc*Wd/Wa, Hx=Hc*Hd/Ha; // sam
@@ -133,8 +134,8 @@ var adjustMbf=function (dMbf,aMbf,rect){
 // (R-L)/Wc=Wd/Wa ==> R/Wc-L/Wc=Wd/Wa ==> R/Wc=Wd/Wa+L/Wc	// 2015/11/28 sam
 //	==> R=Wd/Wa*Wc+L // Wc 縮放 							// 2015/11/28 sam
 //	==> B=Hd/Ha*Hc+T // Hc 縮放								// 2015/11/28 sam
-	var L=Ld-La+Lc, T=Td-Ta+Tc;
-	var R=Math.round(Wd/Wa*Wc)+L, B=Math.round(Hd/Ha*Hc)+T;
+	var L=Math.round(Lc+(1-Wa/Wd)*Wc/2), R=Math.round(Wc*Wa/Wd+L);
+	var T=Math.round(Tc+(1-Ha/Hd)*Hc/2), B=Math.round(Hc/Ha*Hd+T);
 	var result=[L,T,R,B];
 	return result;
 }
@@ -153,41 +154,56 @@ var partsReplace=function(data,unicodes){
     return c;
 }
 var partReplace=function(data,c,d,a){
-//	c='c',d='d',a='a';
-	if(!Object.keys(data).length) return;
-	var m=c.match(/^u[0-9a-f]+(.*)$/);
-	var ua=a.match(/^u/)?ucs(a):a, ud=ucs(d), uc=ucs(c)+m[1], out=uc+ud+ua;
-// 1. 萌日目 遞迴搜尋 c 萌 中 明 的 部件 d 日 換成 a 目
-// 2. 𩀨從䞃致招 遞迴運作 將 部件 從 換成 䞃 繼續 再將 部件 致 換成 招
-// data= {"u5b50":"1:0:2:40:31:149:31$2:22:7:149:31:136:49:102:79$1:0:4:100:72:100:182$1:0:0:14:102:186:102","u53e3":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674e":"99:0:0:0:-2:200:216:u6728-03$99:0:0:13:101:188:181:u53e3","u6728-03":"1:0:0:20:37:180:37$1:0:0:100:14:100:86$2:32:7:95:37:64:76:14:93$2:7:0:105:37:136:73:178:86","u5b50-04":"1:12:13:42:46:42:154$1:2:2:42:46:158:46$1:22:23:158:46:158:154$1:2:2:42:154:158:154","u674f":"1:0:0:16:49:185:49$1:0:0:100:18:100:109$2:32:7:94:49:71:90:16:118$2:7:0:105:49:135:89:178:111$0:0:0:0$99:0:0:14:-50:189:200:u53e3-04","u53e3-04":"99:0:0:0:118:200:190:u53e3"}
-// c=‘u674e’, d='u5b50’, a=‘u53e3’ // 將 李 u674e 的部件 子 u5b50 換成 口 u53e3
-	if(!c) return;
-	var dc=data[c], sd='99[^$]+:('+d+'[^$:]*)', pd=RegExp(sd), md; // 直接搜尋 部件 d
+// 0. 婆女子 換 c 婆 的 部件 d 女 為 a 子 // okay
+// 1. 萌日目 遞迴搜尋部件 換 c 萌 的 部件 明 的 部件 d 日 為 a 目 // okay
+// 2. 虭虫礻 換 c 虭 的 部件 d 虫 的變形 虫1 為 a 礻 // ????
+// 3. 𩀨從䞃致招 遞迴運作 換 c 𩀨 的 部件 d 從 為 c 䞃 再換 其 部件 d 致 為 a 招 // ????
+	if(!Object.keys(data).length) return; // 無 data
+	if(!c) return; // 無 c
+	var mc=c.match(/^u[0-9a-f]{4,5}(.*)$/); // 檢視 c 是否 unicode
+	if(!mc) return // 非 unicode
+	var c1=mc[1]; // 取 c 的變形序碼 c1;
+	var dc=data[c]; // 取 data[c]
+	if(!dc) return; // 無 data[c]
+	if(!d) return; // 無 d
+	a=a||'';
+	var uc=ucs(c)+c1, ud=ucs(d), ua=a.match(/^u\d+/)?ucs(a):a, out=uc+ud+ua;
+	var sd='(99(:[0-9]+){2})((:[-0-9]+){4})(:'+d+'[^$:]*)';
+	var pd=RegExp(sd); // 直接搜尋 部件 d
+	var md=dc.match(pd); // 在 data[c] 中搜尋 部件 d
+	if(md){ // d 不是 c 的 直接部件 遞迴搜尋 檢視 部件 的 部件 // 萌日目
+		if(!a){ // 無 a 表示 刪除 部件 d
+			data[out]=dc.replace(md[0],'').replace(/^\$|\$$/,'');
+			return out;
+		}
 	// data['u840c']='99:0:0:0:2:200:175:u8279-03$99:0:0:0:47:200:195:u660e'
 	// u840c 萌, u8279-03 艹3, u660e 明 
 	// data['u660e']='99:0:0:-2:-1:234:177:u65e5-01$99:0:0:-3:0:197:200:u6708-02'
 	// u660e 明, u65e5-01 日1, u6708-02 月2
 	// "99:0:0:0:-2:200:216:u6728-03$99:0:0:0:-20:200:200:u5b50-04" // 取得 李 的 資訊
-	if(md=dc.match(pd)){ // 若 c 含 部件 d, 則 dd 為實際 d 的 unocode
-		var ds=md[0], dd=md[1]; // ds 為待替換的資訊 準備改以 rr 資訊 將 dd 換為 a 並修正 範圍
-		var md=dd.match(RegExp('^'+d+'(.+)$')); // sam 20151119
-		if(md && data[dd].match(pd)){ // sam 20151119
-			var x=partReplace(data,dd,d,a); // sam 20151119
-			data[out]=dc.replace(dd,x);
-			return out; // sam 20151119
-		} // sam 20151119
-		var m=ds.match(/^(\d+:\d+:\d+:)([-\d]+):([-\d]+):([-\d]+):([-\d]+)/);
-		var x=m.slice(2,6).map(function(n){
+		var ds=md[0]; // ds 為待替換的資訊 準備改以 rr 資訊 將 dd 換為 a 並修正 範圍
+		var dd=md[5].substr(1);
+		var f=md[3].substr(1).split(':').map(function(n){
 			return parseInt(n);
-		})
-		var r=[[x[0],x[1]],[x[2],x[3]]];
-		var dMbf=deepMbf(data,dd), aMbf=deepMbf(data,a);
-		console.log('在 '+uc+' 200x200 字形中 框 ['+x.join()+'] 內 將 '+ud+' 200x200 字形 框 ['+dMbf.join()+'] 內筆畫 換為 '+ua+' 200x200 字形 框 ['+aMbf.join()+'] 內筆畫');
-		var adj=adjustMbf(dMbf,aMbf,r);						// 20151128 sam
-//		var adj=r[0].concat(r[1]).map(function(x,i){		// 20151128 sam
+		});
+//		console.log('mbf(data,"'+dd+'")',mbf(data,dd));
+//		console.log('deepMbf(data,"'+dd+'")',deepMbf(data,dd));
+		// mbf(data,u8864-01) [11, 13, 94, 186] // 衤
+		// mbf(data,u866b-01) [15, 14, 88, 173] // 虫
+//		console.log('mbf(data,"'+a+'")',mbf(data,a));
+//		console.log('deepMbf(data,"'+a+'")',deepMbf(data,a));
+		// mbf(data,u793b) [40, 0, 260, 200]
+		var dMbf=deepMbf(data,dd);
+		var aMbf=deepMbf(data,a);
+		var adj=mapRect(f,aMbf,dMbf);						// 20151130 sam
+//		var adj=adjustMbf(dMbf,aMbf,f);						// 20151128 sam
+//		var adj=f[0].concat(f[1]).map(function(x,i){		// 20151128 sam
 //			return i%2?mapY(x,dMbf,aMbf):mapX(x,dMbf,aMbf)	// 20151128 sam
 //		});													// 20151128 sam
-		var rr=m[1]+adj.join(':')+':'+a;
+		console.log('"'+uc+'" ['+f.join()+'] 的 "'+ud+'" 筆畫 ['+dMbf.join()+'] 換為 ['+adj.join()+'] 的 "'+ua+'" 筆畫 ['+aMbf.join()+']');
+//在 虭 字形 [2,7,177,195] 的 虫 筆畫範圍 [15,14,88,173] 換為 [-35,8,107,181] 的 礻 筆畫範圍 [52,13,142,186]
+//在 初 字形 [3,0,188,200] 的 衤 筆畫範圍 [11,13,94,186] 換為 [-38,0,133,200] 的 礻 筆畫範圍 [52,13,142,186]
+		var rr=md[1]+':'+adj.join(':')+':'+a;
 		data[out]=dc=dc.replace(ds,rr);
 		return out;
 	};
@@ -216,13 +232,15 @@ var getAllGlyphs=function(data,u){
     if(!uu)
       return;
     var up=uu.map(function(u){return u.match(pp)[1];});
-    console.log('data["'+u+'"]="'+data[u]+'"');
-    console.log(ucs(u)+u+' <-- '+up.map(function(u){
-    	return ucs(u)+u;
+//  console.log('data["'+u+'"]=\n"'+data[u]+'"');
+    console.log(ucs(u)+u+' <-- '+uu.map(function(d){
+    	var u=d.match(pp)[1];
+    	var r=d.match(/((:[-0-9]+){4}):[a-z]/)[1].substr(1).replace(/:/g,',');
+    	return '['+r+']'+ucs(u)+u;
     }).join(' '));
 	up.forEach(function(u){
     	getAllGlyphs(data,u);
-    	console.log('data["'+u+'"]="'+data[u]+'"');
+    //	console.log('data["'+u+'"]=\n"'+data[u]+'"');
 	});
 }
 module.exports={
