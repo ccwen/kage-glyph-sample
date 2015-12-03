@@ -136,15 +136,15 @@ var adjustMbf=function (dMbf,aMbf,rect){
 // (R-L)/Wc=Wd/Wa ==> R/Wc-L/Wc=Wd/Wa ==> R/Wc=Wd/Wa+L/Wc	// 2015/11/28 sam
 //	==> R=Wd/Wa*Wc+L // Wc 縮放 							// 2015/11/28 sam
 //	==> B=Hd/Ha*Hc+T // Hc 縮放								// 2015/11/28 sam
-	var L=Math.round(Lc+(1-Wa/Wd)*Wc/2), R=Math.round(Wc*Wa/Wd+L);
-	var T=Math.round(Tc+(1-Ha/Hd)*Hc/2), B=Math.round(Hc/Ha*Hd+T);
+	var L=Math.round(Lc+(1-Wa/Wd)*Wc/2), R=Math.round(Wc*Wa/Wd*.9+L);
+	var T=Math.round(Tc+(1-Ha/Hd)*Hc/2), B=Math.round(Hc/Ha*Hd*.9+T);
 	var result=[L,T,R,B];
 	return result;
 }
 var stack=[];
 var partsReplace=function(data,unicodes){
 	var c=unicodes.shift(), d, a;
-	if(unicodes.length>1){
+	if(unicodes.length){
 		d=unicodes.shift();
 		if(unicodes.length>2){
 			a=partsReplace(data,unicodes)
@@ -155,6 +155,7 @@ var partsReplace=function(data,unicodes){
 	}
     return c;
 }
+var adjPatch=function(a){var L=a[0],T=a[1],R=a[2],B=a[3],W=(R-L)*.9,H=(B-T)*.9; R=L+W,B=T+H; return[L,T,R,B]}
 var partReplace=function(data,c,d,a){
 // 0. 婆女子 換 c 婆 的 部件 d 女 為 a 子 // okay
 // 1. 萌日目 遞迴搜尋部件 換 c 萌 的 部件 明 的 部件 d 日 為 a 目 // okay
@@ -198,15 +199,23 @@ var partReplace=function(data,c,d,a){
 		var dMbf=deepMbf(data,dd);
 		var aMbf=deepMbf(data,a);
 		var adj=mapRect(f,aMbf,dMbf);						// 20151130 sam
+//		var adj=adjPatch(adj);								// 20151203 sam
 //		var adj=adjustMbf(dMbf,aMbf,f);						// 20151128 sam
 //		var adj=f[0].concat(f[1]).map(function(x,i){		// 20151128 sam
 //			return i%2?mapY(x,dMbf,aMbf):mapX(x,dMbf,aMbf)	// 20151128 sam
 //		});													// 20151128 sam
 		console.log('"'+uc+'" ['+f.join()+'] 的 "'+ud+'" 筆畫 ['+dMbf.join()+'] 換為 ['+adj.join()+'] 的 "'+ua+'" 筆畫 ['+aMbf.join()+']');
+		var m=dc.match(/99(:[0-9]+){2}:0:0:200:200:[a-z][^:]+/);
+		if(m&&f[3]-f[1]<100)
+			console.log('matching '+m[0])
+		if(m&&f[3]-f[1]<100){
+			data[out]=dc.replace(dd,a);
+			return out;
+		}
 //在 虭 字形 [2,7,177,195] 的 虫 筆畫範圍 [15,14,88,173] 換為 [-35,8,107,181] 的 礻 筆畫範圍 [52,13,142,186]
 //在 初 字形 [3,0,188,200] 的 衤 筆畫範圍 [11,13,94,186] 換為 [-38,0,133,200] 的 礻 筆畫範圍 [52,13,142,186]
 		var rr=md[1]+':'+adj.join(':')+':'+a;
-		data[out]=dc=dc.replace(ds,rr);
+		data[out]=dc.replace(ds,rr);
 		return out;
 	};
 	var sp='99[^$]+:([^$:]*)', pp=RegExp('^\\$?'+sp+'$'), pg=RegExp('(^|\\$)'+sp,'g'), mg;
