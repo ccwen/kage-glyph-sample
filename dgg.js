@@ -146,17 +146,20 @@ var partsReplace=function(data,unicodes){
 	var c=unicodes.shift(), d, a;
 	if(unicodes.length){
 		d=unicodes.shift();
+		var xTmp=unicodes.shift();					// 20151208 sam
+		if(xTmp!=='u78') 							// 20151208 sam
+			unicodes.unshift(xTmp), xTmp=undefined;	// 20151208 sam
 		if(unicodes.length>2){
 			a=partsReplace(data,unicodes)
 		} else {
 			a=unicodes.shift();
 		}
-		c=partReplace(data,c,d,a);
+		c=partReplace(data,c,d,a,xTmp);
 	}
     return c;
 }
 var adjPatch=function(a){var L=a[0],T=a[1],R=a[2],B=a[3],W=(R-L)*.9,H=(B-T)*.9; R=L+W,B=T+H; return[L,T,R,B]}
-var partReplace=function(data,c,d,a){
+var partReplace=function(data,c,d,a,xTmp){
 // 0. 婆女子 換 c 婆 的 部件 d 女 為 a 子 // okay
 // 1. 萌日目 遞迴搜尋部件 換 c 萌 的 部件 明 的 部件 d 日 為 a 目 // okay
 // 2. 虭虫礻 換 c 虭 的 部件 d 虫 的變形 虫1 為 a 礻 // ????
@@ -205,10 +208,11 @@ var partReplace=function(data,c,d,a){
 //			return i%2?mapY(x,dMbf,aMbf):mapX(x,dMbf,aMbf)	// 20151128 sam
 //		});													// 20151128 sam
 		console.log('"'+uc+'" ['+f.join()+'] 的 "'+ud+'" 筆畫 ['+dMbf.join()+'] 換為 ['+adj.join()+'] 的 "'+ua+'" 筆畫 ['+aMbf.join()+']');
-		var m=dc.match(/99(:[0-9]+){2}:0:0:200:200:[a-z][^:]+/);
-		if(m&&f[3]-f[1]<100)
-			console.log('matching '+m[0])
-		if(m&&f[3]-f[1]<100){
+		if(xTmp){													// 20151208 sam
+	//	var m=dc.match(/99(:[0-9]+){2}:0:0:200:200:[a-z][^:]+/);	// 20151208 sam
+	//	if(m&&f[3]-f[1]<100)										// 20151208 sam
+	//		console.log('matching '+m[0])							// 20151208 sam
+	//	if(m&&f[3]-f[1]<100){										// 20151208 sam
 			data[out]=dc.replace(dd,a);
 			return out;
 		}
