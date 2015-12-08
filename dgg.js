@@ -37,7 +37,7 @@ var getPoints=function(glyphs){
 var getPartRect=function(glyphs,partId){ 
 	var frameHieght, frameWidth;
 	for(var i=0; i<glyphs.length; i++){
-		glyph=glyphs[i].replace(/~/g,"99:0:0:");
+		glyph=glyphs[i]; // .replace(/~/g,"99:0:0:");
 		if(glyph.partId===partId){
 			return glyph.p;
 		}n
@@ -147,7 +147,7 @@ var partsReplace=function(data,unicodes){
 	if(unicodes.length){
 		d=unicodes.shift();
 		var xTmp=unicodes.shift();					// 20151208 sam
-		if(xTmp!=='u78') 							// 20151208 sam
+		if(xTmp && xTmp!=='u78') 							// 20151208 sam
 			unicodes.unshift(xTmp), xTmp=undefined;	// 20151208 sam
 		if(unicodes.length>2){
 			a=partsReplace(data,unicodes)
@@ -241,7 +241,7 @@ var getAllGlyphs=function(data,u){
     var i=GLYPH[u];
     if(!i)
       return;
-    var d=GLYPHS[i].replace(/~/g,"99:0:0:");
+    var d=GLYPHS[i]; // .replace(/~/g,"99:0:0:");
     data[u]=d;
     var uu=d.match(pg); // 所有部件組字資訊
     if(!uu)

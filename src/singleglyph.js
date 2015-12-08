@@ -28,9 +28,24 @@ var checkParam=function(key){ // get url parameter value by key
     var parms=search?decodeURIComponent(search.substr(1)):"";
     var m=parms.match(RegExp('\\b'+key+'\\b')); return m;
 }
+var getUtf32Codes=function(ws){
+	var u, U=[], o={widestring:ws};
+	while (u=getutf32(o)) U.push(u);
+	return U;
+}
+var getUnicodes=function(utf32Codes){
+	return utf32Codes.map(function(u){
+		return 'u'+u.toString(16);
+	})
+}
+var getWideChars=function(utf32Codes){
+	return utf32Codes.map(function(u){
+		return ucs2string(u);
+	})
+}
 var SingleGlyph=React.createClass({
 	getInitialState:function() {
-	    var toload=getParamVal('q',"婆女卡"); // 棚朋國組且系財才手閉才火邏羅人
+	    var toload=getParamVal('q',"婆女卡"); // 婆女卡棚朋國組且系財才手閉才火邏羅人
 	    var size=parseInt(getParamVal('sz',256));
 	    return {toload:toload,size:size}
 	}
@@ -40,30 +55,27 @@ var SingleGlyph=React.createClass({
 	}
 	,loadFromJSON:function() {
 		var toload=this.state.toload;
-		var opts={widestring:toload};
-		var unicodes=[],widechars=[],unicode,widechar,i=0;
-		var data={}, u;
-		while (unicode=getutf32(opts)){
-		  widechar=ucs2string(unicode);
-		  if(widechar>='1' && widechar<='9'){
-		  	  var j=unicode-0x31; // part index in widechars[i-1]
-		  	  var c=widechars[i-1], u='u'+getutf32({widestring:c}).toString(16);
-		  	  var t=getParts(u), L=t.split(' '); L.shift();
-		  	  console.log(c+u+' <-- '+L.map(function(u,i){
-		  	  	return (i+1)+' '+ucs(u)+u;
-		  	  }).join(' '));
-		  	  u=L[j];
-		  	  widechar=u.match(/^u[0-9a-f]{4,5}/)?ucs(u):u;
-		  } else u='u'+unicode.toString(16);
-		  unicodes[i]=u;
-		  dgg.getAllGlyphs(data,u);
-		  if(data[u])
-		  	  data[u]=glyphs[glyph[u]].replace(/~/g,"99:0:0:");
-		  widechars[i]=widechar; i++;
-		}
-		this.unicodes=unicodes;
-	//	this.widechars=widechars;
-		this.data=this.reform(data);
+		var utf32Codes=getUtf32Codes(toload);
+		var unicodes=getUnicodes(utf32Codes);
+		var widechars=getWideChars(utf32Codes);
+		unicodes=unicodes.map(function(unicode,i){
+			var j=parseInt(unicode.substr(1),16)-0x30;
+			if(j>=1 && j<=9){ // 數字 1 ~ 9 代表 c 字符 的 組成部件 序號 
+				var parts=getParts(unicodes[i-1]).split(' ');
+				unicode=j<parts.length?parts[j]:unicode;
+				if(unicode.match(/^u[0-9a-f]{4,5}/)){
+					var utf32=parseInt(unicode.substr(1),16)
+					utf32Codes[i]=utf32;
+					widechars[i]=ucs2string(utf32);
+				}
+			}
+			return unicode;
+		});
+		var data={};
+		unicodes.forEach(function(u){
+			dgg.getAllGlyphs(data,u);
+		});
+		this.data=this.reform(data,unicodes);
 		this.setState({unicodes:unicodes,widechars:widechars,fontdataready:true});
 	}
 	,loadFromServer:function() {
@@ -83,14 +95,14 @@ var SingleGlyph=React.createClass({
 				that.setState({fontdataready:true});
 			});
 	}
-	,reform:function(buhins){
+	,reform:function(buhins,unicodes){
 		var data={};
 		for (var k in buhins) data[k]=buhins[k].replace(/@\d+/g, ""); //workaround @n at the end
 	//	data['c']="99:0:0:-10:-10:140:140:d$99:0:0:60:60:240:240:b";
 	//	data['b']="1:0:0:50:100:100:50$1:0:0:100:50:150:100$1:0:0:150:100:100:150$1:0:0:100:150:50:100";
 	//	data['d']="1:0:0:50:50:150:50$1:0:0:150:50:150:150$1:0:0:150:150:50:150$1:0:0:50:150:50:50";
 	//	data['a']="1:0:0:50:50:150:150$1:0:0:50:150:150:50";
-		this.thefont=dgg.partsReplace(data,this.unicodes);
+		this.thefont=dgg.partsReplace(data,unicodes);
 		KageGlyph.loadBuhins(data);
 		return data;
 	}

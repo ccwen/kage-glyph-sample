@@ -6,7 +6,7 @@ var pg=/99[:-\d]+([a-z][a-z0-9-]*)/g;
 
 var getParts=function(u){
   var i=GLYPH[u];
-  var d=GLYPHS[i].replace(/~/g,'99:0:0:');
+  var d=GLYPHS[i]; // .replace(/~/g,'99:0:0:');
   if(!d) return;
   var out=u;
   var uu=d.match(pg); // 所有部件組字資訊

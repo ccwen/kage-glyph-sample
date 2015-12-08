@@ -1,12 +1,17 @@
 (function(){
   var o={};
-  GLYPH=GLYPH.split(";");
+  GLYPH=GLYPH.split(";"); // GLYPH="u3400;u3401;u3402;..." ==> GLYPH=["u3400","u3401","u3402", ...]
   for (var i=0;i<GLYPH.length;i++) {
     o[GLYPH[i]]=i;
+    // o["u3400"]=0, o["u3401"]=1, o["u3402"]=2, ...
+    // 從 714895 組 GLYPHS 資料中 快取某 unicode 對應的資料
+    // 例如: "u3400" 的資料 為 GLYPHS[GLYPH["u3400"]]
   }
-  glyph=window.GLYPH=o;
+  window.GLYPH=o; // GLYPH["u3400"]=0, GLYPH["u3401"]=1, GLYPH["u3402"]=2, ...
+  window.GLYPHS=GLYPHS.map(function(d){
+    return d.replace(/~/g,'99,0,0');
+  });
 })();
-
 
 var React=require("react");
 var Kage=require("kage").Kage;
@@ -118,7 +123,7 @@ var maincomponent = React.createClass({
     while (unicode=getutf32(opts)){
       unicodes[i]=u='u'+unicode.toString(16);
       dgg.getAllGlyphs(data,u);
-      data[u]=glyphs[glyph[u]].replace(/~/g,"99:0:0:");
+      data[u]=glyphs[glyph[u]]; // .replace(/~/g,"99:0:0:");
       widechars[i]=widechar=ucs2string(unicode); i++;
     }
     this.load(data);
@@ -152,10 +157,10 @@ var maincomponent = React.createClass({
     }.bind(this),0)
   }
   ,render: function() {
-    if (window.location.search) {
-      return E(SingleGlyph,{expression:window.location.search.substr(1)})
-    }
-    return E("div", null, "先取原字 c, 連續取 da 以生新字 c, 將原字 c 部件 d 換字 a"
+    if (window.location.search)
+        return E(SingleGlyph,{expression:window.location.search.substr(1)})
+    else
+        return E("div", null, "先取原字 c, 連續取 da 以生新字 c, 將原字 c 部件 d 換字 a"
             ,E("br")
             ,E("input"
               ,{ref:"toload"
